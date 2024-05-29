@@ -10,6 +10,7 @@ Options:
 
 """
 
+import os
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,56 +24,73 @@ import seaborn as sns
 
 def main(filename, output, model, task, tau):
 
-    print("Opening h5 file...")
-    f = h5py.File(filename, 'r')
+    with h5py.File(filename, mode='r') as f:
 
-    with alive_bar(len(f.keys())) as bar:
-        for k in f.keys():
+        theta = f["theta"][:]  # get positions
+        phi = f["phi"][:]
+        lon = (np.pi - theta) * 180 / np.pi  # define longitude
+        lat = (np.pi / 2 - phi) * 180 / np.pi  # define latitude
 
-            #%% Load data
-            print("Loading h5 file...")
-            df = pd.read_hdf(filename, key=k)  # read dataframe
+        folder_name = f"/{model}_corr_frames_t{int(tau*100)}_s{int(len(f.keys())-2)}/"
+        output_path = os.path.dirname(output+folder_name)
+        if not os.path.exists(output_path):
+            os.mkdir(output_path)
 
-            pos = np.array(df.columns.to_list())  # get positions
-            lon = (np.pi - pos[:, 0]) * 180 / np.pi  # define longitude
-            lat = (np.pi / 2 - pos[:, 1]) * 180 / np.pi  # define latitude
+        with alive_bar(len(f.keys()) - 2) as bar:
+            for k in set(f.keys()) - {"theta", "phi"}:
 
-            cm = df.to_numpy()  # get corr matrix
+                #%% Load data
+                cm = f[k][:]  # get corr matrix
 
-            #%% Impose threshold
-            print("Imposing threshold...")
-            cm[abs(cm) <= tau] = 0  # impose threshold
+                #%% Take the absolute value and impose threshold and
+                cm = abs(cm)
+                cm[cm <= tau] = 0  # impose threshold
 
-            #%% Calculate centrality
-            print("Calculating centrality...")
-            centrality = np.sum(cm, 0)/cm.shape[0]
-            centrality_matrix = centrality.reshape(-1, (pos[:, 0] == 0).sum())
+                #%% Calculate centrality
+                centrality = np.sum(cm, 0)/cm.shape[0]
+                centrality_matrix = centrality.reshape(-1, (theta == 0).sum())
 
-            #%% Plot centrality
-            print("Plotting centrality...")
-            fig, ax = plt.subplots()
-            sns.heatmap(np.flip(centrality_matrix.T, 0), cmap="crest", ax=ax,
-                        cbar_kws=dict(use_gridspec=False, location="top", aspect=60, extend='both',
-                                      label="normalised centrality", pad=0.01))
+                #%% Plot centrality
 
-            x_ticks = 9
-            y_ticks = 5
-            ax.set_xticks(np.linspace(0, len(np.unique(lon)), x_ticks))
-            ax.set_xticklabels(np.linspace(-180, 180, x_ticks, dtype=int))
-            ax.set_yticks(np.linspace(0, len(np.unique(lat)), y_ticks))
-            ax.set_yticklabels(np.linspace(-90, 90, y_ticks, dtype=int))
+                # plot specifics
+                dpi = 200
+                title_func = lambda start, end: 't = {:.3f} - {:.3f} hrs'.format(start, end)
+                savename_func = lambda write: 'write_{:06}.png'.format(write)
 
-            plt.show()
+                # create figure
+                fig, ax = plt.subplots(figsize=(20, 7))
+                plt.rc('text', usetex=True)
+                plt.rc('font', family='serif')
+                plt.rcParams.update({'font.size': 25})
 
-            #%% Update bar
-            bar()
+                # plot
+                sns.heatmap(np.flip(centrality_matrix.T, 0), cmap="crest", ax=ax,
+                            cbar_kws=dict(use_gridspec=False, location="top", aspect=60, extend='both',
+                                          label="normalised centrality", pad=0.01))
 
-#if __name__ == "__main__":
+                # specify ticks plot
+                x_ticks = 9
+                y_ticks = 5
+                ax.set_xticks(np.linspace(0, len(np.unique(lon)), x_ticks))
+                ax.set_xticklabels(np.linspace(-180, 180, x_ticks, dtype=int))
+                ax.set_yticks(np.linspace(0, len(np.unique(lat)), y_ticks))
+                ax.set_yticklabels(np.linspace(90, -90, y_ticks, dtype=int))
 
-    #args = docopt(__doc__)
+                # add time title
+                times = [int(s) for s in k.split('_') if s.isdigit()]
+                fig.suptitle(title_func(times[0]/100, times[1]/100))
 
-    #main(filename=args['<files>'], output=args['--output'], model=args['<model>'], task=args['<task>'],
-    #     tau=args['--tau'])
+                # save figure
+                savename = output + folder_name + savename_func(times[2])
+                fig.savefig(savename, dpi=dpi, bbox_inches='tight')
+                fig.clear()
 
-main(filename='../data/euler/SWE_corr/CM_SWE_velocity.h5', output='../data/euler/SWE_correlation_networks/frames',
-     model='SWE', task='velocity', tau=0.9)
+                #%% Update bar
+                bar()
+
+if __name__ == "__main__":
+
+    args = docopt(__doc__)
+
+    main(filename=args['<files>'], output=args['--output'], model=args['<model>'], task=args['<task>'],
+         tau=float(args['--tau']))

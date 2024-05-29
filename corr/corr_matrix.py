@@ -19,15 +19,24 @@ from docopt import docopt
 from alive_progress import alive_bar
 
 def main(filename, output, model, task, segments):
+    # %% Prepare directory
+    print('Preparing directory...')
+
+    # delete files from previous runs
+    file_path1 = output + f'/CM_{model}_{task}_data.h5'
+    try:
+        os.remove(file_path1)
+        print(f"Previous file '{file_path1}' deleted successfully.")
+    except:
+        pass
+    file_path2 = output + f'/CM_{model}_{task}.h5'
+    try:
+        os.remove(file_path2)
+        print(f"Previous file '{file_path2}' deleted successfully.")
+    except:
+        pass
+
     with h5py.File(filename, mode='r') as file:
-        #%% Prepare directory
-        print('Preparing directory...')
-        file_path = output + f'/CM_{model}_{task}.h5'
-        try:
-            os.remove(file_path)
-            print(f"Previous file '{file_path}' deleted successfully.")
-        except:
-            pass
 
         #%% Load data
         print("Loading data...")
@@ -69,17 +78,21 @@ def main(filename, output, model, task, segments):
             with h5py.File(output + f'/CM_{model}_{task}_data.h5', mode='r') as ddata:
                 for i in range(segments):
                     # find matrix
-                    correlation_matrix = np.corrcoef(ddata[:, i*dt:(i+1)*dt])
+                    correlation_matrix = np.corrcoef(ddata["data"][:, i*dt:(i+1)*dt])
 
                     # save matrix
                     start_time = int(t[i*dt]*100)
                     end_time = int(t[(i+1)*dt-1]*100)
-                    key = "t"+str(start_time)+"_"+str(end_time)
+                    key = "t_"+str(start_time)+"_"+str(end_time)+"_"+str(i)
                     with h5py.File(output + f'/CM_{model}_{task}.h5', mode='a') as store:
                         store.create_dataset(key, data=correlation_matrix)
 
                     # update bar
                     bar()
+
+    # remove file storing intermediate data
+    os.remove(file_path1)
+    print(f"Previous file '{file_path1}' deleted successfully.")
 
 if __name__ == "__main__":
 
