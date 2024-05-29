@@ -52,28 +52,34 @@ def main(filename, output, model, task, segments):
         theta_indices = np.repeat(theta, n_phi)
         phi_indices = np.tile(phi, n_theta)
         with h5py.File(output + f'/CM_{model}_{task}.h5', mode='a') as store:
-            store.create_dataset("theta", data=theta_indices, compression='gzip', compression_opts=9)
-            store.create_dataset("phi", data=phi_indices, compression='gzip', compression_opts=9)
+            store.create_dataset("theta", data=theta_indices)
+            store.create_dataset("phi", data=phi_indices)
 
         #%% Calculate correlation matrix
         print("Calculating correlation matrix...")
 
         ddata = data.reshape(n_t, -1).T
         dt = int(n_t/segments)
+        with h5py.File(output + f'/CM_{model}_{task}_data.h5', mode='a') as store:
+            store.create_dataset("data", data=ddata)
+
+        del data, ddata
+
         with alive_bar(segments) as bar:
-            for i in range(segments):
-                # find matrix
-                correlation_matrix = np.corrcoef(ddata[:, i*dt:(i+1)*dt])
-                # save as dataframe
-                start_time = int(t[i*dt]*100)
-                end_time = int(t[(i+1)*dt-1]*100)
-                key = "t"+str(start_time)+"_"+str(end_time)
+            with h5py.File(output + f'/CM_{model}_{task}_data.h5', mode='r') as ddata:
+                for i in range(segments):
+                    # find matrix
+                    correlation_matrix = np.corrcoef(ddata[:, i*dt:(i+1)*dt])
 
-                with h5py.File(output + f'/CM_{model}_{task}_{i}.h5', mode='a') as store:
-                    store.create_dataset(key, data=correlation_matrix, compression='gzip', compression_opts=9)
+                    # save matrix
+                    start_time = int(t[i*dt]*100)
+                    end_time = int(t[(i+1)*dt-1]*100)
+                    key = "t"+str(start_time)+"_"+str(end_time)
+                    with h5py.File(output + f'/CM_{model}_{task}.h5', mode='a') as store:
+                        store.create_dataset(key, data=correlation_matrix)
 
-                # update bar
-                bar()
+                    # update bar
+                    bar()
 
 if __name__ == "__main__":
 
