@@ -94,6 +94,8 @@ def main(filename, start, count, output):
                     ax.set_xticklabels(np.linspace(-180, 180, x_ticks, dtype=int))
                     ax.set_yticks(np.linspace(0, len(lat), y_ticks))
                     ax.set_yticklabels(np.linspace(90, -90, y_ticks, dtype=int))
+                    ax.set_xlabel('longitude (deg)')
+                    ax.set_ylabel('latitude (deg)')
 
                 # add time title
                 fig.suptitle(title_func(file['scales/sim_time'][index]))

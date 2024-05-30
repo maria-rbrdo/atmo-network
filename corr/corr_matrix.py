@@ -3,6 +3,9 @@ This script takes the results of the SWE/TSWE simulations and finds the
 corr matrix (using Pearson corr) between all grid points.
 Data is saved to a HDF5 file in the output directory specified.
 
+e.g.:
+    $ python3 corr/corr_matrix.py SWE velocity --segments=15 data/model/SWE_snapshots/SWE_snapshots_s1.h5 --output=data/euler/SWE_corr
+
 Usage:
     corr_matrix.py <model> <task> [--segments=<seg>] <files> [--output=<dir>]
 
@@ -81,8 +84,8 @@ def main(filename, output, model, task, segments):
                     correlation_matrix = np.corrcoef(ddata["data"][:, i*dt:(i+1)*dt])
 
                     # save matrix
-                    start_time = int(t[i*dt]*100)
-                    end_time = int(t[(i+1)*dt-1]*100)
+                    start_time = int(round(t[i*dt], 3) * 1000)
+                    end_time = int(round(t[(i+1)*dt-1], 3) * 1000)
                     key = "t_"+str(start_time)+"_"+str(end_time)+"_"+str(i)
                     with h5py.File(output + f'/CM_{model}_{task}.h5', mode='a') as store:
                         store.create_dataset(key, data=correlation_matrix)

@@ -1,12 +1,17 @@
 """
-Plot sphere outputs.
+Plot correlation outputs.
+
+e.g.:
+    $ python3 corr/plot_corr.py SWE velocity --tau=0.9 data/euler/SWE_corr/CM_SWE_velocity.h5 --output=data/euler/SWE_corr
+
 
 Usage:
-    plot_corr.py <model> <task> [--tau=<tau>] <files> [--output=<dir>]
+    plot_corr.py <model> <task> [--tau=<tau>] <files> [--output=<dir>] [--degree_distribution=<degree_distribution>]
 
 Options:
     --output=<dir>  Output directory [default: ./data/euler/<model>_correlation_networks/frames]
     --tau=<tau>  Correlation threshold [default: 0.9]
+    --degree_distribution=<degree_distribution>  Plot the cumulative degree distribution [default: False]
 
 """
 
@@ -22,7 +27,7 @@ from docopt import docopt
 import pandas as pd
 import seaborn as sns
 
-def main(filename, output, model, task, tau):
+def main(filename, output, model, task, tau, degree_distribution):
 
     with h5py.File(filename, mode='r') as f:
 
@@ -47,7 +52,7 @@ def main(filename, output, model, task, tau):
                 cm[cm <= tau] = 0  # impose threshold
 
                 #%% Calculate centrality
-                centrality = np.sum(cm, 0)/cm.shape[0]
+                centrality = np.sum(cm, 1)/cm.shape[0]
                 centrality_matrix = centrality.reshape(-1, (theta == 0).sum())
 
                 #%% Plot centrality
@@ -64,7 +69,8 @@ def main(filename, output, model, task, tau):
                 plt.rcParams.update({'font.size': 25})
 
                 # plot
-                sns.heatmap(np.flip(centrality_matrix.T, 0), cmap="crest", ax=ax,
+                sns.heatmap(np.flip(centrality_matrix.T, 0), ax=ax, vmin=0, vmax=1,
+                            cmap=sns.cubehelix_palette(as_cmap=True, start=.5, rot=-.75, reverse=True),
                             cbar_kws=dict(use_gridspec=False, location="top", aspect=60, extend='both',
                                           label="normalised centrality", pad=0.01))
 
@@ -75,15 +81,37 @@ def main(filename, output, model, task, tau):
                 ax.set_xticklabels(np.linspace(-180, 180, x_ticks, dtype=int))
                 ax.set_yticks(np.linspace(0, len(np.unique(lat)), y_ticks))
                 ax.set_yticklabels(np.linspace(90, -90, y_ticks, dtype=int))
+                ax.set_xlabel('longitude (deg)')
+                ax.set_ylabel('latitude (deg)')
 
                 # add time title
                 times = [int(s) for s in k.split('_') if s.isdigit()]
-                fig.suptitle(title_func(times[0]/100, times[1]/100))
+                fig.suptitle(title_func(times[0]/1000, times[1]/1000))
 
                 # save figure
                 savename = output + folder_name + savename_func(times[2])
                 fig.savefig(savename, dpi=dpi, bbox_inches='tight')
                 fig.clear()
+
+                #%% Cumulative degree distribution
+                if degree_distribution is True:
+                    fig, ax = plt.subplots(figsize=(7, 7))
+                    plt.rc('text', usetex=True)
+                    plt.rc('font', family='serif')
+                    plt.rcParams.update({'font.size': 25})
+
+                    dm = np.count_nonzero(cm, axis=1)  # degree matrix
+                    values, base = np.histogram(dm, bins=40)  # evaluate histogram
+                    cumulative = 1 - np.cumsum(values)/len(dm)  # evaluate cumulative
+                    plt.plot(base[:-1], cumulative)
+                    df = pd.DataFrame({'x': base[:-1], 'y': cumulative})
+                    sns.lineplot(df, x='x', y='y', ax=ax, marker='o', markersize=5, color="black")
+                    ax.set_yscale('log')
+                    ax.set_xlabel('degree')
+                    ax.set_ylabel('cumulative degree distribution function')
+
+                    plt.show()
+
 
                 #%% Update bar
                 bar()
@@ -92,5 +120,8 @@ if __name__ == "__main__":
 
     args = docopt(__doc__)
 
+    print(args['--degree_distribution'])
+    print(bool(args['--degree_distribution'] == "True"))
+
     main(filename=args['<files>'], output=args['--output'], model=args['<model>'], task=args['<task>'],
-         tau=float(args['--tau']))
+         tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"))
