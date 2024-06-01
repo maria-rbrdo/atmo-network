@@ -63,13 +63,13 @@ def main(model, task, method, segments, lag, filename, output):
     print('Preparing directory...')
 
     # delete files from previous runs
-    file_path1 = output + f'/CM_{model}_{task}_data.h5'
+    file_path1 = output + f'/iterm_data.h5'
     try:
         os.remove(file_path1)
         print(f"Previous file '{file_path1}' deleted successfully.")
     except:
         pass
-    file_path2 = output + f'/CM_{model}_{task}.h5'
+    file_path2 = output + f'/CM_{model}_{task}_{method}_s{segments}_l{lag}.h5'
     try:
         os.remove(file_path2)
         print(f"Previous file '{file_path2}' deleted successfully.")
@@ -98,7 +98,7 @@ def main(model, task, method, segments, lag, filename, output):
 
         # keep data in a file to save RAM
         ddata = data.reshape(n_t, -1).T
-        with h5py.File(output + f'/CM_{model}_{task}_data.h5', mode='a') as store:
+        with h5py.File(file_path1, mode='a') as store:
             store.create_dataset("data", data=ddata)
         del data, ddata
 
@@ -108,7 +108,7 @@ def main(model, task, method, segments, lag, filename, output):
         phi_indices = np.tile(phi, n_theta)
 
         # save coordinates
-        with h5py.File(output + f'/CM_{model}_{task}.h5', mode='a') as store:
+        with h5py.File(file_path2, mode='a') as store:
             store.create_dataset("theta", data=theta_indices)
             store.create_dataset("phi", data=phi_indices)
 
@@ -116,12 +116,11 @@ def main(model, task, method, segments, lag, filename, output):
         print("Calculating correlation matrix...")
 
         t_step = int(n_t / segments)  # calculate the number of timesteps on each slice
-        with h5py.File(output + f'/CM_{model}_{task}_data.h5', mode='r') as ddata:
+        with h5py.File(file_path1, mode='r') as ddata:
             for i in range(segments):
                 # find matrix
                 if method == "PCC":
                     correlation_matrix = PCC(ddata["data"][:, i * t_step:(i + 1) * t_step], lag)
-                    print("hi")
                 elif method == "MI":
                     print("pepe")
                 else:
@@ -131,7 +130,7 @@ def main(model, task, method, segments, lag, filename, output):
                 start_time = int(round(t[i * t_step], 3) * 1000)
                 end_time = int(round(t[(i + 1) * t_step - 1], 3) * 1000)
                 key = "t_" + str(start_time) + "_" + str(end_time) + "_" + str(i)
-                with h5py.File(output + f'/CM_{model}_{task}_{method}_s{segments}_l{lag}.h5', mode='a') as store:
+                with h5py.File(file_path2, mode='a') as store:
                     store.create_dataset(key, data=correlation_matrix)
 
     # remove file storing intermediate data
