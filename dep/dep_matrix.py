@@ -10,11 +10,10 @@ which can be found at zero lag (lag = False) or with time lag (lag = True). Data
 saved to a HDF5 file in the output directory specified.
 
 e.g.:
-    $ python3 dep/dep_matrix.py SWE velocity PCC --segments=15 --lagged=True
-        data/model/SWE_snapshots/SWE_snapshots_s1.h5 --output=data/euler/SWE_corr
+    $ python3 dep/dep_matrix.py SWE velocity PCC --segments=1 --lag=True data/model/SWE_snapshots/SWE_snapshots_s1.h5 --output=data/euler/SWE_corr
 
 Usage:
-    - <model> <task> <method> [--segments=<seg>] [--lag=<lag>] <files> [--output=<dir>]
+    dep_matrix.py <model> <task> <method> [--segments=<seg>] [--lag=<lag>] <files> [--output=<dir>]
 
 Options:
     --output=<dir>  Output directory [default: ./data/euler/dep]
@@ -48,7 +47,7 @@ def PCC(data, lag):
                 x_i = data[i, :]
                 for j in range(i + 1, len(data)):
                     x_j = data[j, :]
-                    corr = np.correlate(x_i-means[i], x_j-means[j], mode='same')/len(x_i)/(stds[i]*stds[j])
+                    corr = np.correlate(x_i-means[i], x_j-means[j], mode='full')/len(x_i)/(stds[i]*stds[j])
                     max_corr = np.max(corr)
                     cm[i, j] = max_corr
                     cm[j, i] = max_corr
@@ -117,8 +116,6 @@ def main(model, task, method, segments, lag, filename, output):
         print("Calculating correlation matrix...")
 
         t_step = int(n_t / segments)  # calculate the number of timesteps on each slice
-        dt = t[1]  # timestep
-        lag = int(lag / dt)  # lag in steps instead of time
         with h5py.File(output + f'/CM_{model}_{task}_data.h5', mode='r') as ddata:
             for i in range(segments):
                 # find matrix
@@ -142,10 +139,14 @@ def main(model, task, method, segments, lag, filename, output):
     print(f"Previous file '{file_path1}' deleted successfully.")
 
 if __name__ == "__main__":
+
     args = docopt(__doc__)
 
-    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
-         lag=float(args['--lag']), filename=args['<files>'], output=args['--output'])
+    lag = bool(args['--lag'] == "True")
+    print(lag)
 
-#main("SWE", "velocity", "PCC", segments=1, lag=24,
+    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
+         lag=bool(args['--lag'] == "True"), filename=args['<files>'], output=args['--output'])
+
+#main("SWE", "velocity", "PCC", segments=1, lag=False,
 #     filename="../data/model/SWE_snapshots/SWE_snapshots_s1.h5", output="../data/euler/SWE_corr")
