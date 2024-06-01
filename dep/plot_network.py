@@ -2,7 +2,7 @@
 Plot correlation outputs.
 
 e.g.:
-    $ python3 corr/plot_network.py SWE velocity --tau=0.9 data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_l1.h5 --output=data/euler/SWE_corr
+    $ python3 dep/plot_network.py SWE velocity --tau=0.9 data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_l1.h5 --output=data/euler/SWE_corr
 
 
 Usage:

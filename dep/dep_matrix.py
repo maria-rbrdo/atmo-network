@@ -10,14 +10,14 @@ which can be found at zero lag (lag = False) or with time lag (lag = True). Data
 saved to a HDF5 file in the output directory specified.
 
 e.g.:
-    $ python3 corr/dep_matrix.py SWE velocity PCC --segments=15 --lagged=True
+    $ python3 dep/dep_matrix.py SWE velocity PCC --segments=15 --lagged=True
         data/model/SWE_snapshots/SWE_snapshots_s1.h5 --output=data/euler/SWE_corr
 
 Usage:
     - <model> <task> <method> [--segments=<seg>] [--lag=<lag>] <files> [--output=<dir>]
 
 Options:
-    --output=<dir>  Output directory [default: ./data/euler/corr]
+    --output=<dir>  Output directory [default: ./data/euler/dep]
     --segments=<seg>  Segments in which to break time series [default: 1]
     --lag=<lag>  Maximum lag considered [default: 0]
 """
