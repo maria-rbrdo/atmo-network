@@ -1,21 +1,27 @@
 """
-This script takes the results of the SWE/TSWE simulations and finds the
-corr matrix (using Pearson corr) between all grid points.
-Data is saved to a HDF5 file in the output directory specified.
+This script takes the results of the SWE/TSWE simulations, splits them into
+segments and finds the dependence matrices between all grid points during each
+segment. This can be done using:
+    - kinetic energy (task = velocity)
+The available methods are:
+    - linear correlation (method = PCC)
+    - mutual information (method = MI)
+which can be found at zero lag (lag = False) or with time lag (lag = True). Data is
+saved to a HDF5 file in the output directory specified.
 
 e.g.:
     $ python3 corr/dep_matrix.py SWE velocity PCC --segments=15 --lagged=True
         data/model/SWE_snapshots/SWE_snapshots_s1.h5 --output=data/euler/SWE_corr
 
 Usage:
-    dep_matrix.py <model> <task> <method> [--segments=<seg>] [--lag=<lag>] <files> [--output=<dir>]
+    - <model> <task> <method> [--segments=<seg>] [--lag=<lag>] <files> [--output=<dir>]
 
 Options:
     --output=<dir>  Output directory [default: ./data/euler/corr]
     --segments=<seg>  Segments in which to break time series [default: 1]
     --lag=<lag>  Maximum lag considered [default: 0]
-
 """
+from pyexpat import model
 
 import numpy as np
 from scipy.ndimage import shift
@@ -23,36 +29,37 @@ import h5py
 import os
 from docopt import docopt
 from alive_progress import alive_bar
+import matplotlib.pyplot as plt
 
 
 def PCC(data, lag):
-    if lag == 0:
+    """Find linear Pearson correlation matrix from data with (lag = True) or without
+     (lag = False) lag."""
+
+    if lag is False:
         return np.corrcoef(data)
-    elif lag > 0:
+    else:
         cm = np.zeros(shape=(len(data), len(data)))
         np.fill_diagonal(cm, 1)
-        with alive_bar(len(data), force_tty=True) as bar:
+        means = np.mean(data, 1)
+        stds = np.std(data, 1)
+        with (alive_bar(len(data), force_tty=True) as bar):
             for i in range(len(data)):
-                x_i = np.vstack([shift(data[i, :], l, cval=np.NaN) for l in range(lag)])
+                x_i = data[i, :]
                 for j in range(i + 1, len(data)):
                     x_j = data[j, :]
-                    max_corr = 0
-                    for l in range(lag):
-                        cov = np.cov(np.vstack([x_i[l, :], x_j]))
-                        corr = cov[1, 0] / np.sqrt(cov[0, 0] * cov[1, 1])
-                        if corr > max_corr:
-                            max_corr = corr
+                    corr = np.correlate(x_i-means[i], x_j-means[j], mode='same')/len(x_i)/(stds[i]*stds[j])
+                    max_corr = np.max(corr)
                     cm[i, j] = max_corr
                     cm[j, i] = max_corr
                 bar()
         return cm
-    else:
-        raise ValueError(f"Invalid value for lag: {lag} (should be a positive number)")
-
 
 # def MI(lagged):
 
 def main(model, task, method, segments, lag, filename, output):
+    """Find dependence matrices and store them."""
+
     # %% Prepare directory
     print('Preparing directory...')
 
@@ -90,7 +97,7 @@ def main(model, task, method, segments, lag, filename, output):
             data = 1 / 2 * (u ** 2 + v ** 2)  # kinetic energy
         n_t, n_theta, n_phi = data.shape
 
-        # store data
+        # keep data in a file to save RAM
         ddata = data.reshape(n_t, -1).T
         with h5py.File(output + f'/CM_{model}_{task}_data.h5', mode='a') as store:
             store.create_dataset("data", data=ddata)
@@ -100,6 +107,8 @@ def main(model, task, method, segments, lag, filename, output):
         print("Getting coordinates...")
         theta_indices = np.repeat(theta, n_phi)
         phi_indices = np.tile(phi, n_theta)
+
+        # save coordinates
         with h5py.File(output + f'/CM_{model}_{task}.h5', mode='a') as store:
             store.create_dataset("theta", data=theta_indices)
             store.create_dataset("phi", data=phi_indices)
@@ -107,7 +116,7 @@ def main(model, task, method, segments, lag, filename, output):
         # %% Calculate correlation matrix
         print("Calculating correlation matrix...")
 
-        t_step = int(n_t / segments)
+        t_step = int(n_t / segments)  # calculate the number of timesteps on each slice
         dt = t[1]  # timestep
         lag = int(lag / dt)  # lag in steps instead of time
         with h5py.File(output + f'/CM_{model}_{task}_data.h5', mode='r') as ddata:
@@ -125,14 +134,14 @@ def main(model, task, method, segments, lag, filename, output):
                 start_time = int(round(t[i * t_step], 3) * 1000)
                 end_time = int(round(t[(i + 1) * t_step - 1], 3) * 1000)
                 key = "t_" + str(start_time) + "_" + str(end_time) + "_" + str(i)
-                with h5py.File(output + f'/CM_{model}_{task}.h5', mode='a') as store:
+                with h5py.File(output + f'/CM_{model}_{task}_{method}_s{segments}_l{lag}.h5', mode='a') as store:
                     store.create_dataset(key, data=correlation_matrix)
 
     # remove file storing intermediate data
     os.remove(file_path1)
     print(f"Previous file '{file_path1}' deleted successfully.")
 
-main("SWE", "velocity", "PCC", segments=1, lag=1,
+main("SWE", "velocity", "PCC", segments=1, lag=24,
      filename="../data/model/SWE_snapshots/SWE_snapshots_s1.h5", output="../data/euler/SWE_corr")
 
 

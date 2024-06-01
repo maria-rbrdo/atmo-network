@@ -2,11 +2,11 @@
 Plot correlation outputs.
 
 e.g.:
-    $ python3 corr/plot_network.py SWE velocity --tau=0.9 data/euler/SWE_corr/CM_SWE_velocity.h5 --output=data/euler/SWE_corr
+    $ python3 corr/plot_network.py SWE velocity --tau=0.9 data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_l1.h5 --output=data/euler/SWE_corr
 
 
 Usage:
-    plot_network.py <model> <task> [--tau=<tau>] <files> [--output=<dir>] [--degree_distribution=<degree_distribution>]
+    plot_network.py <model> <task> <method> [--lag=<lag>] [--tau=<tau>] <files> [--output=<dir>] [--degree_distribution=<degree_distribution>]
 
 Options:
     --output=<dir>  Output directory [default: ./data/euler/<model>_correlation_networks/frames]
@@ -23,7 +23,7 @@ from alive_progress import alive_bar
 from docopt import docopt
 from network_properties import calc_centrality, calc_prob_distrib
 
-def main(filename, output, model, task, tau, degree_distribution):
+def main(model, task, method, lag, tau, filename, output, degree_distribution):
 
     with h5py.File(filename, mode='r') as f:
 
@@ -32,7 +32,7 @@ def main(filename, output, model, task, tau, degree_distribution):
         lon = (np.pi - theta) * 180 / np.pi  # define longitude
         lat = (np.pi / 2 - phi) * 180 / np.pi  # define latitude
 
-        folder_name = f"/{model}_{task}_t{int(tau*100)}_s{int(len(f.keys())-2)}/"
+        folder_name = f"/{model}_{task}_{method}_s{int(len(f.keys())-2)}_l{lag}_t{int(tau*100)}/"
         output_path = os.path.dirname(output+folder_name)
         if not os.path.exists(output_path):
             os.mkdir(output_path)
@@ -66,4 +66,4 @@ def main(filename, output, model, task, tau, degree_distribution):
 #    main(filename=args['<files>'], output=args['--output'], model=args['<model>'], task=args['<task>'],
 #         tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"))
 
-main("../data/euler/SWE_corr/CM_SWE_velocity.h5", "../data/euler/SWE_corr", "SWE", "velocity", 0.5, degree_distribution=False)
+main("../data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_l1.h5", "../data/euler/SWE_corr", "SWE", "velocity", 0.5, degree_distribution=False)
