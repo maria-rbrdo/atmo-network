@@ -141,12 +141,11 @@ def main(model, task, method, segments, lag, filename, output):
     os.remove(file_path1)
     print(f"Previous file '{file_path1}' deleted successfully.")
 
-main("SWE", "velocity", "PCC", segments=1, lag=24,
-     filename="../data/model/SWE_snapshots/SWE_snapshots_s1.h5", output="../data/euler/SWE_corr")
+if __name__ == "__main__":
+    args = docopt(__doc__)
 
+    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
+         lag=float(args['--lag']), filename=args['<files>'], output=args['--output'])
 
-#if __name__ == "__main__":
-#    args = docopt(__doc__)
-
-#    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
-#         lag=float(args['--lag']), filename=args['<files>'], output=args['--output'])
+#main("SWE", "velocity", "PCC", segments=1, lag=24,
+#     filename="../data/model/SWE_snapshots/SWE_snapshots_s1.h5", output="../data/euler/SWE_corr")
