@@ -42,16 +42,16 @@ def PCC(data, lag):
         np.fill_diagonal(cm, 1)
         means = np.mean(data, 1)
         stds = np.std(data, 1)
-        with (alive_bar(len(data), force_tty=True) as bar):
+        with (alive_bar(manual=True, force_tty=True) as bar):
             for i in range(len(data)):
                 x_i = data[i, :]
                 for j in range(i + 1, len(data)):
                     x_j = data[j, :]
-                    corr = np.correlate(x_i-means[i], x_j-means[j], mode='full')/len(x_i)/(stds[i]*stds[j])
+                    corr = np.correlate(x_i-means[i], x_j-means[j], mode='same')/len(x_i)/(stds[i]*stds[j])
                     max_corr = np.max(corr)
                     cm[i, j] = max_corr
                     cm[j, i] = max_corr
-                bar()
+                bar(np.count_nonzero(cm)/len(cm)**2)
         return cm
 
 # def MI(lagged):

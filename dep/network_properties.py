@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+from graph_tool.all import *
 
 #%% CENTRALITY
 def calc_centrality(cm, lon, lat, times, savename, dpi=200, area_weighted=True):
@@ -70,3 +71,11 @@ def calc_prob_distrib(matrix, savename, dpi=200):
     fig.clear()
 
     return cumulative
+
+#%%
+def calc_clustering(cm, lon, lat, times, savename, dpi=200):
+
+    g = Graph(scipy.sparse.lil_matrix(cm))
+    clust = gt.local_clustering(g)
+
+    return clustering
