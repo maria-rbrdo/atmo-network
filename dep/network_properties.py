@@ -3,23 +3,16 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from graph_tool.all import *
+import scipy
 
-#%% CENTRALITY
-def calc_centrality(cm, lon, lat, times, savename, dpi=200, area_weighted=True):
-    # calculate centrality
-    if area_weighted is False:
-        centrality = np.sum(cm, 1) / cm.shape[0]
-    else:
-        centrality = np.sum(cm, 1)*np.cos(np.deg2rad(lat)) / np.sum(np.cos(np.deg2rad(lat)))
-
-    centrality_matrix = centrality.reshape(-1, (lon == 0).sum())
-
-    # make figure
+#%% PLOT
+def plot_matrix(matrix, lon, lat, times, savename, dpi=200):
+    #make figure
     fig, ax = plt.subplots(figsize=(20, 7))
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     plt.rcParams.update({'font.size': 25})
-    sns.heatmap(np.flip(centrality_matrix.T, 0), ax=ax, vmin=0, vmax=1,
+    sns.heatmap(np.flip(matrix.T, 0), ax=ax, vmin=0, vmax=1,
                 cmap=sns.cubehelix_palette(as_cmap=True, start=.5, rot=-.75, reverse=True),
                 cbar_kws=dict(use_gridspec=False, location="top", aspect=60, extend='both',
                               label="normalised centrality", pad=0.01))
@@ -39,6 +32,19 @@ def calc_centrality(cm, lon, lat, times, savename, dpi=200, area_weighted=True):
     # save figure
     fig.savefig(savename, dpi=dpi, bbox_inches='tight')
     fig.clear()
+
+#%% CENTRALITY
+def calc_centrality(cm, lon, lat, times, savename, dpi=200, area_weighted=True):
+    # calculate centrality
+    if area_weighted is False:
+        centrality = np.sum(cm, 1) / cm.shape[0]
+    else:
+        centrality = np.sum(cm, 1)*np.cos(np.deg2rad(lat)) / np.sum(np.cos(np.deg2rad(lat)))
+
+    centrality_matrix = centrality.reshape(-1, (lon == 0).sum())
+
+    # generate plot
+    plot_matrix(centrality_matrix, lon, lat, times, savename, dpi=200)
 
     return centrality
 
@@ -72,10 +78,50 @@ def calc_prob_distrib(matrix, savename, dpi=200):
 
     return cumulative
 
-#%%
+#%% LOCAL CLUSTERING
 def calc_clustering(cm, lon, lat, times, savename, dpi=200):
 
     g = Graph(scipy.sparse.lil_matrix(cm))
-    clust = gt.local_clustering(g)
+    clust = local_clustering(g)
+    clust_matrix = clust.get_array().reshape(-1, (lon == 0).sum())
 
-    return clustering
+    # generate plot
+    plot_matrix(clust_matrix, lon, lat, times, savename, dpi=200)
+
+    return clust.get_array()
+
+#%% CLOSENESS CENTRALITY
+def calc_closeness(cm, lon, lat, times, savename, dpi=200):
+
+    g = Graph(scipy.sparse.lil_matrix(cm))
+    close = closeness(g)
+    close_matrix = close.get_array().reshape(-1, (lon == 0).sum())
+
+    # generate plot
+    plot_matrix(close_matrix, lon, lat, times, savename, dpi=200)
+
+    return close.get_array()
+
+#%% BETWEENESS CENTRALITY
+def calc_betweeness(cm, lon, lat, times, savename, dpi=200):
+
+    g = Graph(scipy.sparse.lil_matrix(cm))
+    between = closeness(g)
+    between_matrix = between.get_array().reshape(-1, (lon == 0).sum())
+
+    # generate plot
+    plot_matrix(between_matrix, lon, lat, times, savename, dpi=200)
+
+    return between.get_array()
+
+
+#%% EIGENVECTOR CENTRALITY
+def calc_eigenvector(cm, lon, lat, times, savename, dpi=200):
+    g = Graph(scipy.sparse.lil_matrix(cm))
+    eigen = eigenvector(g)
+    eigen_matrix = eigen.get_array().reshape(-1, (lon == 0).sum())
+
+    # generate plot
+    plot_matrix(eigen_matrix, lon, lat, times, savename, dpi=200)
+
+    return eigen.get_array()

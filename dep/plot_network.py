@@ -21,9 +21,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from alive_progress import alive_bar
 from docopt import docopt
-from network_properties import calc_centrality, calc_prob_distrib
+from network_properties import calc_centrality, calc_prob_distrib, calc_clustering
 
-def main(model, task, method, lag, tau, filename, output, degree_distribution):
+def main(model, task, method, measure, lag, tau, filename, output, degree_distribution):
 
     with h5py.File(filename, mode='r') as f:
 
@@ -32,7 +32,7 @@ def main(model, task, method, lag, tau, filename, output, degree_distribution):
         lon = (np.pi - theta) * 180 / np.pi  # define longitude
         lat = (np.pi / 2 - phi) * 180 / np.pi  # define latitude
 
-        folder_name = f"/{model}_{task}_{method}_s{int(len(f.keys())-2)}_l{lag}_t{int(tau*100)}/"
+        folder_name = f"/{model}_{task}_{method}_{measure}_s{int(len(f.keys())-2)}_l{lag}_t{int(tau*100)}/"
         output_path = os.path.dirname(output+folder_name)
         if not os.path.exists(output_path):
             os.mkdir(output_path)
@@ -49,12 +49,18 @@ def main(model, task, method, lag, tau, filename, output, degree_distribution):
 
                 #%% Centrality
                 savename = output + folder_name + 'write_{:06}.png'.format(times[2])
-                centrality = calc_centrality(cm, lon, lat, times, savename)
+
+                if measure == "centrality":
+                    net = calc_centrality(cm, lon, lat, times, savename)
+                elif measure == "clustering":
+                    net = calc_clustering(cm, lon, lat, times, savename)
+                else:
+                    raise ValueError(f"Unknown measure: {method}. Please choose from: centrality and clustering.")
 
                 #%% Cumulative degree distribution
                 if degree_distribution is True:
                     savename = output + folder_name + "degdistrib_" + 'write_{:06}.png'.format(times[2])
-                    _ = calc_prob_distrib(centrality, savename)
+                    _ = calc_prob_distrib(net, savename)
 
                 #%% Update bar
                 bar()
@@ -66,6 +72,6 @@ def main(model, task, method, lag, tau, filename, output, degree_distribution):
 #    main(filename=args['<files>'], output=args['--output'], model=args['<model>'], task=args['<task>'],
 #         tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"))
 
-main("SWE", "velocity", "PCC", "clustering", 0.9,
-     "../data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_l1.h5", "../data/euler/SWE_corr",
+main("SWE", "velocity", "PCC", "clustering", True,
+     0.9, "../data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_lTrue.h5", "../data/euler/SWE_corr",
      degree_distribution=False)
