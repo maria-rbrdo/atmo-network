@@ -21,7 +21,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from alive_progress import alive_bar
 from docopt import docopt
-from network_properties import calc_centrality, calc_prob_distrib, calc_clustering
+import network_properties
+from network_properties import calc_prob_distrib
 
 def main(model, task, method, measure, lag, tau, filename, output, degree_distribution):
 
@@ -49,13 +50,11 @@ def main(model, task, method, measure, lag, tau, filename, output, degree_distri
 
                 #%% Centrality
                 savename = output + folder_name + 'write_{:06}.png'.format(times[2])
-
-                if measure == "centrality":
-                    net = calc_centrality(cm, lon, lat, times, savename)
-                elif measure == "clustering":
-                    net = calc_clustering(cm, lon, lat, times, savename)
-                else:
-                    raise ValueError(f"Unknown measure: {method}. Please choose from: centrality and clustering.")
+                try: # measures: centrality, clustering, closeness, betweeness, eigenvector
+                    function = getattr(network_properties, 'calc_'+measure)
+                    net = function(cm, lon, lat, times, savename, dpi=200)
+                except:
+                    raise ValueError(f"Unknown measure: {measure}.")
 
                 #%% Cumulative degree distribution
                 if degree_distribution is True:
@@ -72,6 +71,6 @@ def main(model, task, method, measure, lag, tau, filename, output, degree_distri
 #    main(filename=args['<files>'], output=args['--output'], model=args['<model>'], task=args['<task>'],
 #         tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"))
 
-main("SWE", "velocity", "PCC", "clustering", True,
+main("SWE", "velocity", "PCC", "betweeness", True,
      0.9, "../data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_lTrue.h5", "../data/euler/SWE_corr",
      degree_distribution=False)
