@@ -6,7 +6,7 @@ e.g.:
 
 
 Usage:
-    plot_network.py <model> <task> <method> [--lag=<lag>] [--tau=<tau>] <files> [--output=<dir>] [--degree_distribution=<degree_distribution>]
+    plot_network.py <model> <task> <method> <measure> [--lag=<lag>] [--tau=<tau>] <files> [--output=<dir>] [--degree_distribution=<degree_distribution>]
 
 Options:
     --output=<dir>  Output directory [default: ./data/euler/<model>_correlation_networks/frames]
@@ -64,13 +64,14 @@ def main(model, task, method, measure, lag, tau, filename, output, degree_distri
                 #%% Update bar
                 bar()
 
-#if __name__ == "__main__":
+if __name__ == "__main__":
 
-#    args = docopt(__doc__)
+    args = docopt(__doc__)
 
-#    main(filename=args['<files>'], output=args['--output'], model=args['<model>'], task=args['<task>'],
-#         tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"))
+    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], measure=args['<measure>'],
+         lag=args['<lag>'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
+         filename=args['<files>'], output=args['--output'])
 
-main("SWE", "velocity", "PCC", "centrality", 24,
-     0.9, "../data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_l24.h5", "../data/euler/SWE_corr",
-     degree_distribution=False)
+#main("SWE", "velocity", "PCC", "centrality", 24,
+#     0.9, "../data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_l24.h5", "../data/euler/SWE_corr",
+#     degree_distribution=False)
