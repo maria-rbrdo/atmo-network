@@ -129,7 +129,7 @@ def main(model, task, method, segments, lag, filename, output):
             for i in range(segments):
                 # find matrix
                 if method == "PCC":
-                    correlation_matrix = PCC_fast(ddata["data"][:, i * t_step:(i + 1) * t_step], lag)
+                    correlation_matrix = PCC(ddata["data"][:, i * t_step:(i + 1) * t_step], lag)
                 elif method == "MI":
                     print("pepe")
                 else:
@@ -146,12 +146,12 @@ def main(model, task, method, segments, lag, filename, output):
     os.remove(file_path1)
     print(f"Previous file '{file_path1}' deleted successfully.")
 
-#if __name__ == "__main__":
+if __name__ == "__main__":
 
-#    args = docopt(__doc__)
+    args = docopt(__doc__)
 
-#    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
-#         lag=bool(args['--lag'] == "True"), filename=args['<files>'], output=args['--output'])
+    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
+         lag=bool(args['--lag'] == "True"), filename=args['<files>'], output=args['--output'])
 
-main("SWE", "velocity", "PCC", segments=1, lag=24,
-     filename="../data/model/SWE_snapshots/SWE_snapshots_s1.h5", output="../data/euler/SWE_corr")
+#main("SWE", "velocity", "PCC", segments=1, lag=24,
+#     filename="../data/model/SWE_snapshots/SWE_snapshots_s1.h5", output="../data/euler/SWE_corr")
