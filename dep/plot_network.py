@@ -71,6 +71,6 @@ def main(model, task, method, measure, lag, tau, filename, output, degree_distri
 #    main(filename=args['<files>'], output=args['--output'], model=args['<model>'], task=args['<task>'],
 #         tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"))
 
-main("SWE", "velocity", "PCC", "betweeness", True,
-     0.9, "../data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_lTrue.h5", "../data/euler/SWE_corr",
+main("SWE", "velocity", "PCC", "centrality", 24,
+     0.9, "../data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_l24.h5", "../data/euler/SWE_corr",
      degree_distribution=False)

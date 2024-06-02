@@ -23,36 +23,42 @@ Options:
 from pyexpat import model
 
 import numpy as np
-from scipy.ndimage import shift
+import pandas as pd
 import h5py
 import os
 from docopt import docopt
 from alive_progress import alive_bar
-import matplotlib.pyplot as plt
 
-
-def PCC(data, lag):
+def PCC(data, max_lag):
     """Find linear Pearson correlation matrix from data with (lag = True) or without
      (lag = False) lag."""
 
-    if lag is False:
+    if max_lag == 0:
         return np.corrcoef(data)
-    else:
-        cm = np.zeros(shape=(len(data), len(data)))
-        np.fill_diagonal(cm, 1)
-        means = np.mean(data, 1)
-        stds = np.std(data, 1)
-        with (alive_bar(manual=True, force_tty=True) as bar):
-            for i in range(len(data)):
-                x_i = data[i, :]
-                for j in range(i + 1, len(data)):
-                    x_j = data[j, :]
-                    corr = np.correlate(x_i-means[i], x_j-means[j], mode='same')/len(x_i)/(stds[i]*stds[j])
-                    max_corr = np.max(corr)
-                    cm[i, j] = max_corr
-                    cm[j, i] = max_corr
-                bar(np.count_nonzero(cm)/len(cm)**2)
+    elif type(max_lag) is int and max_lag > 0:
+        with (alive_bar(max_lag, force_tty=True) as bar):
+            cm = np.corrcoef(data)  # zero lag correlation
+            bar()  # update bar
+
+            for lag in range(1, max_lag):
+                data_unshift = data[:, lag:]  # original series
+                data_shift = data[:, :-lag]  # lagged series
+
+                cov = np.cov(data_unshift, data_shift)  # compute covariance
+
+                var_i = np.diag(cov[:int(len(cov)/2), :int(len(cov)/2)])  # variance of original series
+                var_j = np.diag(cov[int(len(cov)/2):, int(len(cov)/2):])  # variance of lagged series
+                var_ij = np.outer(var_i, var_j)  # product of variances
+
+                corr = cov[:int(len(cov)/2), int(len(cov)/2):] / np.sqrt(var_ij)  # correlation (normalised variance)
+
+                cm = np.where(np.abs(cm) >= np.abs(corr), cm, corr)  # store biggest entries
+
+                bar()  # update bar
         return cm
+    else:
+        raise ValueError('lag must be an integer greater than zero.')
+
 
 # def MI(lagged):
 
@@ -116,11 +122,14 @@ def main(model, task, method, segments, lag, filename, output):
         print("Calculating correlation matrix...")
 
         t_step = int(n_t / segments)  # calculate the number of timesteps on each slice
+        dt = t[1]  # timestep
+        lag = int(lag/dt)  # lag
+
         with h5py.File(file_path1, mode='r') as ddata:
             for i in range(segments):
                 # find matrix
                 if method == "PCC":
-                    correlation_matrix = PCC(ddata["data"][:, i * t_step:(i + 1) * t_step], lag)
+                    correlation_matrix = PCC_fast(ddata["data"][:, i * t_step:(i + 1) * t_step], lag)
                 elif method == "MI":
                     print("pepe")
                 else:
@@ -137,15 +146,12 @@ def main(model, task, method, segments, lag, filename, output):
     os.remove(file_path1)
     print(f"Previous file '{file_path1}' deleted successfully.")
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
 
-    args = docopt(__doc__)
+#    args = docopt(__doc__)
 
-    lag = bool(args['--lag'] == "True")
-    print(lag)
+#    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
+#         lag=bool(args['--lag'] == "True"), filename=args['<files>'], output=args['--output'])
 
-    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
-         lag=bool(args['--lag'] == "True"), filename=args['<files>'], output=args['--output'])
-
-#main("SWE", "velocity", "PCC", segments=1, lag=False,
-#     filename="../data/model/SWE_snapshots/SWE_snapshots_s1.h5", output="../data/euler/SWE_corr")
+main("SWE", "velocity", "PCC", segments=1, lag=24,
+     filename="../data/model/SWE_snapshots/SWE_snapshots_s1.h5", output="../data/euler/SWE_corr")

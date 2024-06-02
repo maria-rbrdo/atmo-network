@@ -34,7 +34,7 @@ def plot_matrix(matrix, measure, lon, lat, times, savename, dpi=200):
     fig.clear()
 
 #%% CENTRALITY
-def calc_centrality(cm, lon, lat, times, savename, dpi=200, area_weighted=True):
+def calc_centrality(cm, lon, lat, times, savename, dpi=200, area_weighted=False):
     # calculate centrality
     if area_weighted is False:
         centrality = np.sum(cm, 1) / cm.shape[0]
