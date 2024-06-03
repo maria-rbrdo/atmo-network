@@ -49,7 +49,7 @@ def main(model, task, method, measure, lag, tau, filename, output, degree_distri
 
                 #%% Centrality
                 savename = output + folder_name + 'write_{:06}.png'.format(times[2])
-                try: # measures: centrality, clustering, closeness, betweeness, eigenvector
+                try:  # measures: centrality, clustering, closeness, betweeness, eigenvector
                     function = getattr(network_properties, 'calc_'+measure)
                     net = function(cm, lon, lat, times, savename, dpi=200)
                 except:
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     args = docopt(__doc__)
 
     main(model=args['<model>'], task=args['<task>'], method=args['<method>'], measure=args['<measure>'],
-         lag=args['<lag>'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
+         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
          filename=args['<files>'], output=args['--output'])
 
 #main("SWE", "velocity", "PCC", "centrality", 24,

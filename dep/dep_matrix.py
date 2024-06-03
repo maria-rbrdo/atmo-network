@@ -10,7 +10,7 @@ which can be found at zero lag (lag = False) or with time lag (lag = True). Data
 saved to a HDF5 file in the output directory specified.
 
 e.g.:
-    $ python3 dep/dep_matrix.py SWE velocity PCC --segments=1 --lag=True data/model/SWE_snapshots/SWE_snapshots_s1.h5 --output=data/euler/SWE_corr
+    $ python3 dep/dep_matrix.py SWE velocity PCC --segments=1 --lag=24 data/model/SWE_snapshots/SWE_snapshots_s1.h5 --output=data/euler/SWE_corr
 
 Usage:
     dep_matrix.py <model> <task> <method> [--segments=<seg>] [--lag=<lag>] <files> [--output=<dir>]
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     args = docopt(__doc__)
 
     main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
-         lag=bool(args['--lag'] == "True"), filename=args['<files>'], output=args['--output'])
+         lag=int(args['--lag']), filename=args['<files>'], output=args['--output'])
 
 #main("SWE", "velocity", "PCC", segments=1, lag=24,
 #     filename="../data/model/SWE_snapshots/SWE_snapshots_s1.h5", output="../data/euler/SWE_corr")

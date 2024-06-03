@@ -44,7 +44,7 @@ def calc_centrality(cm, lon, lat, times, savename, dpi=200, area_weighted=False)
     centrality_matrix = centrality.reshape(-1, (lon == 0).sum())
 
     # generate plot
-    plot_matrix(centrality_matrix, "normalised centrality", lon, lat, times, savename, dpi=200)
+    plot_matrix(centrality_matrix, "normalised centrality", lon, lat, times, savename, dpi=dpi)
 
     return centrality
 
@@ -56,7 +56,7 @@ def calc_clustering(cm, lon, lat, times, savename, dpi=200):
     clust_matrix = clust.get_array().reshape(-1, (lon == 0).sum())
 
     # generate plot
-    plot_matrix(clust_matrix, "local clustering", lon, lat, times, savename, dpi=200)
+    plot_matrix(clust_matrix, "local clustering", lon, lat, times, savename, dpi=dpi)
 
     return clust.get_array()
 
@@ -68,7 +68,7 @@ def calc_closeness(cm, lon, lat, times, savename, dpi=200):
     close_matrix = close.get_array().reshape(-1, (lon == 0).sum())
 
     # generate plot
-    plot_matrix(close_matrix, "closeness centrality", lon, lat, times, savename, dpi=200)
+    plot_matrix(close_matrix, "closeness centrality", lon, lat, times, savename, dpi=dpi)
 
     return close.get_array()
 
@@ -80,7 +80,7 @@ def calc_betweeness(cm, lon, lat, times, savename, dpi=200):
     between_matrix = between.get_array().reshape(-1, (lon == 0).sum())
 
     # generate plot
-    plot_matrix(between_matrix, "betweeness centrality", lon, lat, times, savename, dpi=200)
+    plot_matrix(between_matrix, "betweeness centrality", lon, lat, times, savename, dpi=dpi)
 
     return between.get_array()
 
@@ -92,7 +92,7 @@ def calc_eigenvector(cm, lon, lat, times, savename, dpi=200):
     eigen_matrix = eigen.get_array().reshape(-1, (lon == 0).sum())
 
     # generate plot
-    plot_matrix(eigen_matrix, "eigenvector centrality", lon, lat, times, savename, dpi=200)
+    plot_matrix(eigen_matrix, "eigenvector centrality", lon, lat, times, savename, dpi=dpi)
 
     return eigen.get_array()
 
