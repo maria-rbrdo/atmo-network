@@ -13,10 +13,10 @@ def plot_matrix(matrix, measure, lon, lat, times, savename, dpi=200, vmax=None, 
     plt.rc('font', family='serif')
     plt.rcParams.update({'font.size': 25})
     sns.heatmap(np.flip(matrix.T, 0), ax=ax, vmax=vmax, vmin=vmin,
-                cmap=sns.cubehelix_palette(as_cmap=True, start=.5, rot=-.75, reverse=True),
+                #cmap=sns.cubehelix_palette(as_cmap=True, start=.5, rot=-.75, reverse=True),
+                cmap=sns.color_palette("Spectral", as_cmap=True),
                 cbar_kws=dict(use_gridspec=False, location="top", aspect=60, extend='both',
                               label=f"{measure}", pad=0.01))
-
     x_ticks = 9
     y_ticks = 5
     ax.set_xticks(np.linspace(0, len(np.unique(lon)), x_ticks))
