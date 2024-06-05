@@ -2,7 +2,7 @@
 Plot correlation outputs.
 
 e.g.:
-    $ python3 dep/plot_network.py SWE velocity --tau=0.9 data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_l1.h5 --output=data/euler/SWE_corr
+    $ python3 dep/plot_network.py SWE velocity PCC centrality --lag=0 --tau=0.9 data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_l1.h5 --output=data/euler/SWE_corr
 
 
 Usage:
@@ -42,8 +42,8 @@ def main(model, task, method, measure, lag, tau, filename, output, degree_distri
 
                 #%% Load data
                 cm = f[k][:]  # get correlation data
-                cm = abs(cm)  # get correlation matrix
-                cm[cm <= tau] = 0  # impose threshold
+                # cm = abs(cm)  # get correlation matrix
+                cm[abs(cm) <= tau] = 0  # impose threshold
 
                 times = [int(s) for s in k.split('_') if s.isdigit()]  # get times
 
@@ -58,19 +58,19 @@ def main(model, task, method, measure, lag, tau, filename, output, degree_distri
                 #%% Cumulative degree distribution
                 if degree_distribution is True:
                     savename = output + folder_name + "degdistrib_" + 'write_{:06}.png'.format(times[2])
-                    _ = calc_prob_distrib(net, savename)
+                    _ = calc_prob_distrib(net, savename, measure)
 
                 #%% Update bar
                 bar()
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
 
-    args = docopt(__doc__)
+#    args = docopt(__doc__)
 
-    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], measure=args['<measure>'],
-         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
-         filename=args['<files>'], output=args['--output'])
+#    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], measure=args['<measure>'],
+#         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
+#         filename=args['<files>'], output=args['--output'])
 
-#main("SWE", "velocity", "PCC", "centrality", 24,
-#     0.9, "../data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_l24.h5", "../data/euler/SWE_corr",
-#     degree_distribution=False)
+main("SWE", "velocity", "PCC", "clustering", 24,
+     0.9, "../data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_l24.h5", "../data/euler/SWE_corr",
+     degree_distribution=False)

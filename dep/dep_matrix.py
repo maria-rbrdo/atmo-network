@@ -31,30 +31,58 @@ from alive_progress import alive_bar
 
 def PCC(data, max_lag):
     """Find linear Pearson correlation matrix from data with (lag = True) or without
-     (lag = False) lag."""
+     (lag = False) lag.
+
+     The weight magnitude of each edge is the absolute value of the maximum correlation.
+     The sign of each weight indicates the direction of the interaction (E.g. C_ij>0 is from j to i)."""
 
     if max_lag == 0:
         return np.corrcoef(data)
     elif type(max_lag) is int and max_lag > 0:
-        with (alive_bar(max_lag, force_tty=True) as bar):
+        with (alive_bar(max_lag*2, force_tty=True) as bar):
             cm = np.corrcoef(data)  # zero lag correlation
             bar()  # update bar
 
+            # Positive lags — from j to i:
             for lag in range(1, max_lag):
-                data_unshift = data[:, lag:]  # original series
-                data_shift = data[:, :-lag]  # lagged series
+                data_i = data[:, lag:]  # original series
+                data_j = data[:, :-lag]  # lagged series
 
-                cov = np.cov(data_unshift, data_shift)  # compute covariance
+                cov = np.cov(data_i, data_j)  # compute covariance
 
-                var_i = np.diag(cov[:int(len(cov)/2), :int(len(cov)/2)])  # variance of original series
-                var_j = np.diag(cov[int(len(cov)/2):, int(len(cov)/2):])  # variance of lagged series
+                var_i = np.diag(cov[:int(len(cov) / 2), :int(len(cov) / 2)])  # variance of original series
+                var_j = np.diag(cov[int(len(cov) / 2):, int(len(cov) / 2):])  # variance of lagged series
                 var_ij = np.outer(var_i, var_j)  # product of variances
 
-                corr = cov[:int(len(cov)/2), int(len(cov)/2):] / np.sqrt(var_ij)  # correlation (normalised variance)
+                corr = cov[:int(len(cov) / 2), int(len(cov) / 2):] / np.sqrt(
+                    var_ij)  # correlation (normalised variance)
 
-                cm = np.where(np.abs(cm) >= np.abs(corr), cm, corr)  # store biggest entries
+                cm = np.where(np.abs(cm) >= np.abs(corr), cm, abs(corr))  # store biggest entries
 
                 bar()  # update bar
+
+            # Negative lags — from i to j:
+            for lag in range(1, max_lag):
+                data_i = data[:, :-lag]  # original series
+                data_j = data[:, lag:]  # lagged series
+
+                cov = np.cov(data_i, data_j)  # compute covariance
+
+                var_i = np.diag(cov[:int(len(cov) / 2), :int(len(cov) / 2)])  # variance of original series
+                var_j = np.diag(cov[int(len(cov) / 2):, int(len(cov) / 2):])  # variance of lagged series
+                var_ij = np.outer(var_i, var_j)  # product of variances
+
+                corr = cov[:int(len(cov) / 2), int(len(cov) / 2):] / np.sqrt(
+                    var_ij)  # correlation (normalised variance)
+
+                cm = np.where(np.abs(cm) >= np.abs(corr), cm, -abs(corr))  # store biggest entries
+
+                bar()  # update bar
+
+            # change indices
+            lower_triangle_indices = np.tril_indices_from(cm)
+            cm[lower_triangle_indices] *= -1
+
         return cm
     else:
         raise ValueError('lag must be an integer greater than zero.')
@@ -146,12 +174,12 @@ def main(model, task, method, segments, lag, filename, output):
     os.remove(file_path1)
     print(f"Previous file '{file_path1}' deleted successfully.")
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
 
-    args = docopt(__doc__)
+#    args = docopt(__doc__)
 
-    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
-         lag=int(args['--lag']), filename=args['<files>'], output=args['--output'])
+#    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
+#         lag=int(args['--lag']), filename=args['<files>'], output=args['--output'])
 
-#main("SWE", "velocity", "PCC", segments=1, lag=24,
-#     filename="../data/model/SWE_snapshots/SWE_snapshots_s1.h5", output="../data/euler/SWE_corr")
+main("SWE", "velocity", "PCC", segments=1, lag=24,
+     filename="../data/model/SWE_snapshots/SWE_snapshots_s1.h5", output="../data/euler/SWE_corr")

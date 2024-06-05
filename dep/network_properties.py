@@ -6,13 +6,13 @@ from graph_tool.all import *
 import scipy
 
 #%% PLOT
-def plot_matrix(matrix, measure, lon, lat, times, savename, dpi=200):
+def plot_matrix(matrix, measure, lon, lat, times, savename, dpi=200, vmax=None, vmin=None):
     #make figure
     fig, ax = plt.subplots(figsize=(20, 7))
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     plt.rcParams.update({'font.size': 25})
-    sns.heatmap(np.flip(matrix.T, 0), ax=ax,
+    sns.heatmap(np.flip(matrix.T, 0), ax=ax, vmax=vmax, vmin=vmin,
                 cmap=sns.cubehelix_palette(as_cmap=True, start=.5, rot=-.75, reverse=True),
                 cbar_kws=dict(use_gridspec=False, location="top", aspect=60, extend='both',
                               label=f"{measure}", pad=0.01))
@@ -44,7 +44,7 @@ def calc_centrality(cm, lon, lat, times, savename, dpi=200, area_weighted=False)
     centrality_matrix = centrality.reshape(-1, (lon == 0).sum())
 
     # generate plot
-    plot_matrix(centrality_matrix, "normalised centrality", lon, lat, times, savename, dpi=dpi)
+    plot_matrix(centrality_matrix, "normalised centrality", lon, lat, times, savename, dpi=dpi, vmax=1, vmin=0)
 
     return centrality
 
@@ -97,7 +97,7 @@ def calc_eigenvector(cm, lon, lat, times, savename, dpi=200):
     return eigen.get_array()
 
 #%% PROBABILITY DISTRIBUTION
-def calc_prob_distrib(matrix, savename, dpi=200):
+def calc_prob_distrib(matrix, measure, savename, dpi=200):
     values, base = np.histogram(matrix, bins=40)  # evaluate histogram
     cumulative = 1 - np.cumsum(values) / len(matrix)  # evaluate cumulative
     p = np.polyfit(base[:-1], np.log(cumulative), 1, w=np.sqrt(cumulative))  # fit exponential
@@ -117,11 +117,19 @@ def calc_prob_distrib(matrix, savename, dpi=200):
     ax.set_ylim([1e-3, 1])
     ax.set_yscale('log')
 
-    ax.set_xlabel('degree')
-    ax.set_ylabel('cumulative degree distribution')
+    ax.set_xlabel(f'{measure}')
+    ax.set_ylabel('cumulative probability distribution')
 
     # save figure
     fig.savefig(savename, dpi=dpi, bbox_inches='tight')
     fig.clear()
 
     return cumulative
+
+#%% DENSITY
+def calc_density(matrix):
+    degrees = np.array([np.nonzero(matrix[i,:]) for i in range(len(matrix))])
+    d_mean = np.mean(degrees)
+    d_std = np.std(degrees)
+    print(f"The density of the matrix is {d_mean}+/-{d_std}")
+    return d_mean, d_std
