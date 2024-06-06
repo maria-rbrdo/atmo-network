@@ -42,8 +42,9 @@ def main(model, task, method, measure, lag, tau, filename, output, degree_distri
 
                 #%% Load data
                 cm = f[k][:]  # get correlation data
-                # cm = abs(cm)  # get correlation matrix
-                cm[abs(cm) <= tau] = 0  # impose threshold
+                np.fill_diagonal(cm, 0)  # take out diagonal
+                cm[np.abs(cm) <= tau] = 0  # impose threshold
+                #cm = np.where(cm > 0, 1, np.where(cm < 0, -1, 0))  # unweighted matrix
 
                 times = [int(s) for s in k.split('_') if s.isdigit()]  # get times
 
@@ -71,6 +72,6 @@ def main(model, task, method, measure, lag, tau, filename, output, degree_distri
 #         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
 #         filename=args['<files>'], output=args['--output'])
 
-main("SWE", "velocity", "PCC", "clustering", 24,
-     0.9, "../data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_l24.h5", "../data/euler/SWE_corr",
+main("SWE", "velocity", "PCC", "centrality", 24,
+     0.99, "../data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_l24.h5", "../data/euler/SWE_corr",
      degree_distribution=False)

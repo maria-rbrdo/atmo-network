@@ -1,4 +1,5 @@
 import numpy as np
+from alive_progress import alive_bar
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
@@ -12,9 +13,9 @@ def plot_matrix(matrix, measure, lon, lat, times, savename, dpi=200, vmax=None, 
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     plt.rcParams.update({'font.size': 25})
-    sns.heatmap(np.flip(matrix.T, 0), ax=ax, vmax=vmax, vmin=vmin,
+    sns.heatmap(np.flip(matrix.T, 0), ax=ax, center = 0,
                 #cmap=sns.cubehelix_palette(as_cmap=True, start=.5, rot=-.75, reverse=True),
-                cmap=sns.color_palette("Spectral", as_cmap=True),
+                cmap=sns.diverging_palette(150, 275, s=80, l=55, n=9, as_cmap=True),
                 cbar_kws=dict(use_gridspec=False, location="top", aspect=60, extend='both',
                               label=f"{measure}", pad=0.01))
     x_ticks = 9
@@ -44,7 +45,7 @@ def calc_centrality(cm, lon, lat, times, savename, dpi=200, area_weighted=False)
     centrality_matrix = centrality.reshape(-1, (lon == 0).sum())
 
     # generate plot
-    plot_matrix(centrality_matrix, "normalised centrality", lon, lat, times, savename, dpi=dpi, vmax=1, vmin=0)
+    plot_matrix(centrality_matrix, "normalised strength centrality", lon, lat, times, savename, dpi=dpi)
 
     return centrality
 
@@ -128,8 +129,30 @@ def calc_prob_distrib(matrix, measure, savename, dpi=200):
 
 #%% DENSITY
 def calc_density(matrix):
-    degrees = np.array([np.nonzero(matrix[i,:]) for i in range(len(matrix))])
-    d_mean = np.mean(degrees)
-    d_std = np.std(degrees)
-    print(f"The density of the matrix is {d_mean}+/-{d_std}")
-    return d_mean, d_std
+    degrees = np.array([len(np.nonzero(matrix[i, :])[0]) for i in range(len(matrix))])
+    return degrees
+
+#%% DISTANCE
+def calc_distance(lat1, lat2, lon1, lon2):
+    R = 6371  # km radius Earth
+    Dlat = np.abs(lat1 - lat2)
+    Dlon = np.abs(lon1 - lon2)
+    a = np.sin(Dlat/2)**2 + np.cos(lat1)*np.cos(lat2)*np.sin(Dlon/2)**2
+    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1-np.round(a, 15)))
+    return R*c
+def calc_distances(matrix, lon, lat):
+    all_dist = np.array([])
+    with alive_bar(len(matrix), force_tty=True) as bar:
+        for i in range(len(matrix)):
+            # identify
+            lat2 = lat[np.nonzero(matrix[i, :])[0]]
+            lat1 = lat[i]*np.ones_like(lat2)
+            lon2 = lon[np.nonzero(matrix[i, :])[0]]
+            lon1 = lon[i] * np.ones_like(lon2)
+            # calculate
+            dist = calc_distance(lat1, lat2, lon1, lon2)
+            # append
+            all_dist = np.append(all_dist, dist)
+            # update bar
+            bar()
+    return all_dist

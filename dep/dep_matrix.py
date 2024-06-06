@@ -57,7 +57,7 @@ def PCC(data, max_lag):
                 corr = cov[:int(len(cov) / 2), int(len(cov) / 2):] / np.sqrt(
                     var_ij)  # correlation (normalised variance)
 
-                cm = np.where(np.abs(cm) >= np.abs(corr), cm, abs(corr))  # store biggest entries
+                cm = np.where(np.abs(cm) > np.abs(corr), cm, np.abs(corr))  # store biggest entries
 
                 bar()  # update bar
 
@@ -75,13 +75,9 @@ def PCC(data, max_lag):
                 corr = cov[:int(len(cov) / 2), int(len(cov) / 2):] / np.sqrt(
                     var_ij)  # correlation (normalised variance)
 
-                cm = np.where(np.abs(cm) >= np.abs(corr), cm, -abs(corr))  # store biggest entries
+                cm = np.where(np.abs(cm) > np.abs(corr), cm, -np.abs(corr))  # store biggest entries
 
                 bar()  # update bar
-
-            # change indices
-            lower_triangle_indices = np.tril_indices_from(cm)
-            cm[lower_triangle_indices] *= -1
 
         return cm
     else:
