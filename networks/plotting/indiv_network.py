@@ -2,11 +2,11 @@
 Plot correlation outputs.
 
 e.g.:
-    $ python3 dep/plot_network.py SWE velocity PCC centrality --lag=0 --tau=0.9 data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_l1.h5 --output=data/euler/SWE_corr
+    $ python3 networks/indiv_network.py SWE velocity PCC centrality --lag=0 --tau=0.9 data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_l1.h5 --output=data/euler/SWE_corr
 
 
 Usage:
-    plot_network.py <model> <task> <method> <measure> [--lag=<lag>] [--tau=<tau>] <files> [--output=<dir>] [--degree_distribution=<degree_distribution>]
+    indiv_network.py <model> <task> <method> <measure> [--lag=<lag>] [--tau=<tau>] <files> [--output=<dir>] [--degree_distribution=<degree_distribution>]
 
 Options:
     --output=<dir>  Output directory [default: ./data/euler/<model>_correlation_networks/frames]
@@ -20,8 +20,8 @@ import h5py
 import numpy as np
 from alive_progress import alive_bar
 from docopt import docopt
-import network_properties
-from network_properties import calc_prob_distrib
+import networks.network_properties as net_prop
+from networks.network_properties import calc_prob_distrib
 
 def main(model, task, method, measure, lag, tau, filename, output, degree_distribution):
 
@@ -51,7 +51,7 @@ def main(model, task, method, measure, lag, tau, filename, output, degree_distri
                 #%% Centrality
                 savename = output + folder_name + 'write_{:06}.png'.format(times[2])
                 try:  # measures: centrality, clustering, closeness, betweeness, eigenvector
-                    function = getattr(network_properties, 'calc_'+measure)
+                    function = getattr(net_prop, 'calc_'+measure)
                     net = function(cm, lon, lat, times, savename, dpi=200)
                 except:
                     raise ValueError(f"Unknown measure: {measure}.")
@@ -64,14 +64,14 @@ def main(model, task, method, measure, lag, tau, filename, output, degree_distri
                 #%% Update bar
                 bar()
 
-#if __name__ == "__main__":
+if __name__ == "__main__":
 
-#    args = docopt(__doc__)
+    args = docopt(__doc__)
 
-#    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], measure=args['<measure>'],
-#         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
-#         filename=args['<files>'], output=args['--output'])
+    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], measure=args['<measure>'],
+         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
+         filename=args['<files>'], output=args['--output'])
 
-main("SWE", "velocity", "PCC", "centrality", 24,
-     0.99, "../data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_l24.h5", "../data/euler/SWE_corr",
-     degree_distribution=False)
+#main("SWE", "velocity", "PCC", "centrality", 24,
+#     0.99, "../../data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_l24.h5", "../data/euler/SWE_corr",
+#     degree_distribution=False)

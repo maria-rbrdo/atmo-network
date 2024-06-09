@@ -1,6 +1,6 @@
 """
 This script takes the results of the SWE/TSWE simulations, splits them into
-segments and finds the dependence matrices between all grid points during each
+segments and finds the dependence adjacency matrices between all grid points during each
 segment. This can be done using:
     - kinetic energy (task = velocity)
 The available methods are:
@@ -10,13 +10,13 @@ which can be found at zero lag (lag = False) or with time lag (lag = True). Data
 saved to a HDF5 file in the output directory specified.
 
 e.g.:
-    $ python3 dep/dep_matrix.py SWE velocity PCC --segments=1 --lag=24 data/model/SWE_snapshots/SWE_snapshots_s1.h5 --output=data/euler/SWE_corr
+    $ python3 networks/dep_matrix.py SWE velocity PCC --segments=1 --lag=24 data/model/SWE_snapshots/SWE_snapshots_s1.h5 --output=data/euler/SWE_corr
 
 Usage:
     dep_matrix.py <model> <task> <method> [--segments=<seg>] [--lag=<lag>] <files> [--output=<dir>]
 
 Options:
-    --output=<dir>  Output directory [default: ./data/euler/dep]
+    --output=<dir>  Output directory [default: ./data/euler/networks]
     --segments=<seg>  Segments in which to break time series [default: 1]
     --lag=<lag>  Maximum lag considered [default: 0]
 """
@@ -142,8 +142,8 @@ def main(model, task, method, segments, lag, filename, output):
             store.create_dataset("theta", data=theta_indices)
             store.create_dataset("phi", data=phi_indices)
 
-        # %% Calculate correlation matrix
-        print("Calculating correlation matrix...")
+        # %% Calculate dependence matrix
+        print("Calculating dependence matrix...")
 
         t_step = int(n_t / segments)  # calculate the number of timesteps on each slice
         dt = t[1]  # timestep
@@ -170,12 +170,12 @@ def main(model, task, method, segments, lag, filename, output):
     os.remove(file_path1)
     print(f"Previous file '{file_path1}' deleted successfully.")
 
-#if __name__ == "__main__":
+if __name__ == "__main__":
 
-#    args = docopt(__doc__)
+    args = docopt(__doc__)
 
-#    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
-#         lag=int(args['--lag']), filename=args['<files>'], output=args['--output'])
+    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
+         lag=int(args['--lag']), filename=args['<files>'], output=args['--output'])
 
-main("SWE", "velocity", "PCC", segments=1, lag=24,
-     filename="../data/model/SWE_snapshots/SWE_snapshots_s1.h5", output="../data/euler/SWE_corr")
+#main("SWE", "velocity", "PCC", segments=1, lag=24,
+#     filename="../../data/model/SWE_snapshots/SWE_snapshots_s1.h5", output="../data/euler/SWE_corr")

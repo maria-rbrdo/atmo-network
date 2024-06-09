@@ -5,34 +5,7 @@ import pandas as pd
 import seaborn as sns
 from graph_tool.all import *
 import scipy
-
-#%% PLOT
-def plot_matrix(matrix, measure, lon, lat, times, savename, dpi=200, vmax=None, vmin=None):
-    #make figure
-    fig, ax = plt.subplots(figsize=(20, 7))
-    plt.rc('text', usetex=True)
-    plt.rc('font', family='serif')
-    plt.rcParams.update({'font.size': 25})
-    sns.heatmap(np.flip(matrix.T, 0), ax=ax, center = 0,
-                #cmap=sns.cubehelix_palette(as_cmap=True, start=.5, rot=-.75, reverse=True),
-                cmap=sns.diverging_palette(150, 275, s=80, l=55, n=9, as_cmap=True),
-                cbar_kws=dict(use_gridspec=False, location="top", aspect=60, extend='both',
-                              label=f"{measure}", pad=0.01))
-    x_ticks = 9
-    y_ticks = 5
-    ax.set_xticks(np.linspace(0, len(np.unique(lon)), x_ticks))
-    ax.set_xticklabels(np.linspace(-180, 180, x_ticks, dtype=int))
-    ax.set_yticks(np.linspace(0, len(np.unique(lat)), y_ticks))
-    ax.set_yticklabels(np.linspace(90, -90, y_ticks, dtype=int))
-
-    ax.set_xlabel('longitude (deg)')
-    ax.set_ylabel('latitude (deg)')
-
-    fig.suptitle('t = {:.3f} - {:.3f} hrs'.format(times[0] / 1000, times[1] / 1000))
-
-    # save figure
-    fig.savefig(savename, dpi=dpi, bbox_inches='tight')
-    fig.clear()
+from networks.plotting.plotting import *
 
 #%% CENTRALITY
 def calc_centrality(cm, lon, lat, times, savename, dpi=200, area_weighted=False):
