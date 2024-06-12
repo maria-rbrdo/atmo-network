@@ -162,7 +162,7 @@ def main(model, task, method, segments, lag, filename, output):
 
 #    args = docopt(__doc__)
 
-#    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
+#    main(model=, task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
 #         lag=int(args['--lag']), filename=args['<files>'], output=args['--output'])
 
 main("SWE", "vorticity", "PCC", segments=15, lag=23,

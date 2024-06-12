@@ -9,18 +9,20 @@ jet from Galewsky et al. 2004 (https://doi.org/10.3402/tellusa.v56i5.14436).
 The initial height field balanced the imposed jet is solved with an LBVP.
 A perturbation is then added and the solution is evolved as an IVP.
 
+REMEMBER TO WRITE INPUTS IN E NOTATION WITHOUT . or ** SO IT CAN SAVE THE FILE
+
 Usage:
     SWE.py [--nu=<nu>] [--umax=<umax>] [--hpert=<hpert>] [--nmodes=<nmodes>] [--output=<dir>]
 
 Options:
-    --nu=<nu> Diffusion coefficient [default:1e5]
-    --umax=<umax>  Maximum zonal velocity [default:80]
-    --hpert=<hpert>  Perturbation amplitude [default:120]
-    --nmodes=<nmodes>  Number of latitudinal spectral modes [default:2**6]
+    --nu=<nu>  Diffusion coefficient [default: 1e5]
+    --umax=<umax>  Maximum zonal velocity [default: 80]
+    --hpert=<hpert>  Perturbation amplitude [default: 120]
+    --nmodes=<nmodes>  Number of latitudinal spectral modes [default: 2e6]
     --output=<dir>  Output directory [default: ../data/model/SWE_snapshots]
 """
 
-import docopt
+from docopt import docopt
 import numpy as np
 from scipy import integrate
 import dedalus.public as d3
@@ -142,5 +144,7 @@ if __name__ == "__main__":
 
     args = docopt(__doc__)
 
-    main(in_nu=args['<nu>'], in_umax=args['<umax>'], in_hpert=args['<hpert>'], in_nmodes=args['<nmodes>'],
-         savefolder=args['<dir>'])
+    savefolder = args['--output'] + f"_{args['--nu']}_{args['--umax']}_{args['--hpert']}_{args['--nmodes']}"
+
+    main(in_nu=float(args['--nu']), in_umax=float(args['--umax']), in_hpert=float(args['--hpert']),
+         in_nmodes=int(eval(args['--nmodes'])), savefolder=savefolder)
