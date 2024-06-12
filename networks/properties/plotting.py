@@ -3,13 +3,22 @@ import seaborn as sns
 import numpy as np
 
 def plot_matrix(matrix, measure, lon, lat, times, savename, dpi=200):
-    #make figure
-    fig, ax = plt.subplots(figsize=(20, 7))
+    # settings
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     plt.rcParams.update({'font.size': 25})
-    sns.heatmap(np.flip(matrix.T, 0), ax=ax, center=0,
-                cmap=sns.diverging_palette(150, 275, s=80, l=55, n=9, as_cmap=True),
+
+    # select colormap depending on whether all values have the same sign or not
+    if np.any(matrix<0) & np.any(matrix>0):
+        my_cmap = "icefire"  # sns.diverging_palette(150, 275, s=80, l=55, n=9, as_cmap=True)
+        my_center = 0
+    else:
+        my_cmap = "mako"
+        my_center = None
+
+    # make figure
+    fig, ax = plt.subplots(figsize=(20, 7))
+    sns.heatmap(np.flip(matrix.T, 0), ax=ax, cmap=my_cmap, center=my_center,
                 cbar_kws=dict(use_gridspec=False, location="top", aspect=60, extend='both',
                               label=f"{measure}", pad=0.01))
     x_ticks = 9
@@ -26,14 +35,15 @@ def plot_matrix(matrix, measure, lon, lat, times, savename, dpi=200):
 
     # save figure
     fig.savefig(savename, dpi=dpi, bbox_inches='tight')
-    fig.clear()
+    plt.close()
 
 def plot_line(savename, df, dpi=200):
 
-    fig, ax = plt.subplots(figsize=(20, 7))
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     plt.rcParams.update({'font.size': 25})
+
+    fig, ax = plt.subplots(figsize=(20, 7))
 
     sns.lineplot(df, ax=ax, x=df.columns[0], y=df.columns[1], marker='o', markersize=5, color="black", errorbar="sd")
 
@@ -44,13 +54,14 @@ def plot_line(savename, df, dpi=200):
 
     # save figure
     fig.savefig(savename, dpi=dpi, bbox_inches='tight')
-    fig.clear()
+    plt.close()
 
 def plot_hist(savename, df, dpi=200):
-    fig, ax = plt.subplots(figsize=(20, 7))
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     plt.rcParams.update({'font.size': 25})
+
+    fig, ax = plt.subplots(figsize=(20, 7))
 
     sns.histplot(df, ax=ax, x=df.columns[1], hue=df.columns[0], element="step", stat="percent", common_norm=False,
                  palette=sns.color_palette(), bins=50)
@@ -60,4 +71,4 @@ def plot_hist(savename, df, dpi=200):
 
     # save figure
     fig.savefig(savename, dpi=dpi, bbox_inches='tight')
-    fig.clear()
+    plt.close()

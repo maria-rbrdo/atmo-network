@@ -1,26 +1,34 @@
 import numpy as np
-from alive_progress import alive_bar
-import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
+from alive_progress import alive_bar
 from graph_tool.all import *
 import scipy
-from networks.plotting.plotting import *
+from plotting import *
 
 #%% CENTRALITY
 def calc_centrality(cm, lon, lat, times, savename, dpi=200, area_weighted=False):
     # calculate centrality
     if area_weighted is False:
-        centrality = np.sum(cm, 1) / cm.shape[0]
+        out_centrality = np.sum(cm, 0) / cm.shape[0]
+        in_centrality = np.sum(cm, 1) / cm.shape[0]
     else:
-        centrality = np.sum(cm, 1)*np.cos(np.deg2rad(lat)) / np.sum(np.cos(np.deg2rad(lat)))
+        out_centrality = np.sum(cm, 0) * np.cos(np.deg2rad(lat)) / np.sum(np.cos(np.deg2rad(lat)))
+        in_centrality = np.sum(cm, 1)*np.cos(np.deg2rad(lat)) / np.sum(np.cos(np.deg2rad(lat)))
 
-    centrality_matrix = centrality.reshape(-1, (lon == 0).sum())
+    out_centrality_matrix = out_centrality.reshape(-1, (lon == 0).sum())
+    in_centrality_matrix = in_centrality.reshape(-1, (lon == 0).sum())
 
     # generate plot
-    plot_matrix(centrality_matrix, "normalised strength centrality", lon, lat, times, savename, dpi=dpi)
+    index = savename.rfind('.png')
+    savename_out = savename[:index] + "_out" + savename[index:]
+    savename_in = savename[:index] + "_in" + savename[index:]
+    savename_diff = savename[:index] + "_diff" + savename[index:]
 
-    return centrality
+    plot_matrix(out_centrality_matrix, "normalised out centrality", lon, lat, times, savename_out, dpi=dpi)
+    plot_matrix(in_centrality_matrix, "normalised in centrality", lon, lat, times, savename_in, dpi=dpi)
+    plot_matrix(in_centrality_matrix-out_centrality_matrix, "normalised in - out centrality", lon, lat, times, savename_diff, dpi=dpi)
+
+    return in_centrality_matrix, out_centrality_matrix
 
 #%% LOCAL CLUSTERING
 def calc_clustering(cm, lon, lat, times, savename, dpi=200):
@@ -83,7 +91,7 @@ def calc_prob_distrib(matrix, measure, savename, dpi=200):
     plt.rc('font', family='serif')
     plt.rcParams.update({'font.size': 25})
 
-    df = pd.DataFrame({'x': base[:-1], 'y': cumulative, 'y_fit': approx})
+    df = pd.DataFrame({'x': base[:-1], 'y': cumulative,'y_fit': approx})
     sns.lineplot(df, x='x', y='y_fit', ax=ax, markersize=5, linewidth=2, color="gray")
     sns.lineplot(df, x='x', y='y', ax=ax, marker='o', markersize=5, linewidth=2, color="black")
     ax.lines[0].set_linestyle("--")

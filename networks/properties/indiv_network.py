@@ -20,8 +20,8 @@ import h5py
 import numpy as np
 from alive_progress import alive_bar
 from docopt import docopt
-import networks.network_properties as net_prop
-from networks.network_properties import calc_prob_distrib
+import network_properties as net_prop
+from network_properties import calc_prob_distrib
 
 def main(model, task, method, measure, lag, tau, filename, output, degree_distribution):
 
@@ -43,6 +43,7 @@ def main(model, task, method, measure, lag, tau, filename, output, degree_distri
                 #%% Load data
                 cm = f[k][:]  # get correlation data
                 np.fill_diagonal(cm, 0)  # take out diagonal
+                cm = np.abs(cm) # take absolute value
                 cm[np.abs(cm) <= tau] = 0  # impose threshold
                 #cm = np.where(cm > 0, 1, np.where(cm < 0, -1, 0))  # unweighted matrix
 
@@ -59,19 +60,19 @@ def main(model, task, method, measure, lag, tau, filename, output, degree_distri
                 #%% Cumulative degree distribution
                 if degree_distribution is True:
                     savename = output + folder_name + "degdistrib_" + 'write_{:06}.png'.format(times[2])
-                    _ = calc_prob_distrib(net, savename, measure)
+                    _ = calc_prob_distrib(net, measure, savename)
 
                 #%% Update bar
                 bar()
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
 
-    args = docopt(__doc__)
+#    args = docopt(__doc__)
 
-    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], measure=args['<measure>'],
-         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
-         filename=args['<files>'], output=args['--output'])
+#    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], measure=args['<measure>'],
+#         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
+#         filename=args['<files>'], output=args['--output'])
 
-#main("SWE", "velocity", "PCC", "centrality", 24,
-#     0.99, "../../data/euler/SWE_corr/CM_SWE_velocity_PCC_s1_l24.h5", "../data/euler/SWE_corr",
-#     degree_distribution=False)
+main("SWE", "vorticity", "PCC", "centrality", 23,
+     0.9, "../../data/euler/SWE_corr/CM_SWE_vorticity_PCC_s5_l23.h5", "../../data/euler/SWE_corr",
+     degree_distribution=False)
