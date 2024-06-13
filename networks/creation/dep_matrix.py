@@ -10,7 +10,7 @@ which can be found at zero lag (lag = False) or with time lag (lag = True). Data
 saved to a HDF5 file in the output directory specified.
 
 e.g.:
-    $ python3 networks/dep_matrix.py SWE velocity PCC --segments=1 --lag=24 data/model/SWE_snapshots/SWE_snapshots_s1.h5 --output=data/euler/SWE_corr
+    $ python3 networks/creation/dep_matrix.py SWE velocity PCC --segments=1 --lag=24 data/model/SWE_snapshots/SWE_snapshots_s1.h5 --output=data/euler/SWE_corr
 
 Usage:
     dep_matrix.py <model> <task> <method> [--segments=<seg>] [--lag=<lag>] <files> [--output=<dir>]
@@ -47,8 +47,8 @@ def PCC(data, max_lag):
             # Positive lags — from j to i:
             for lag in range(1, max_lag):
 
-                data_i = data[:, lag:]  # original series
-                data_j = data[:, :-lag]  # lagged series
+                data_i = data[:, lag:]  # series i -> moving forewards
+                data_j = data[:, :-lag]  # series j -> moving backwards
 
                 cov = np.cov(data_i, data_j)  # compute covariance
 
@@ -162,8 +162,13 @@ def main(model, task, method, segments, lag, filename, output):
 
 #    args = docopt(__doc__)
 
-#    main(model=, task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
+#    output_path = os.path.join(args['--output'])
+
+#    if not os.path.isdir(output_path):
+#        os.mkdir(output_path)
+
+#    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
 #         lag=int(args['--lag']), filename=args['<files>'], output=args['--output'])
 
 main("SWE", "vorticity", "PCC", segments=15, lag=23,
-     filename="../../data/model/SWE_snapshots/SWE_snapshots_s1.h5", output="../../data/euler/SWE_corr")
+     filename="../../data/model/SWE_snapshots/n1e5_u10_h120_m64/n1e5_u10_h120_m64_s1.h5", output="../../data/euler/SWE_corr")

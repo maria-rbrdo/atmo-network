@@ -11,6 +11,9 @@ A perturbation is then added and the solution is evolved as an IVP.
 
 REMEMBER TO WRITE INPUTS IN E NOTATION WITHOUT . or ** SO IT CAN SAVE THE FILE
 
+e.g.:
+    $ python3 dedalus/SWE.py --umax=80
+
 Usage:
     SWE.py [--nu=<nu>] [--umax=<umax>] [--hpert=<hpert>] [--nmodes=<nmodes>] [--output=<dir>]
 
@@ -18,11 +21,12 @@ Options:
     --nu=<nu>  Diffusion coefficient [default: 1e5]
     --umax=<umax>  Maximum zonal velocity [default: 80]
     --hpert=<hpert>  Perturbation amplitude [default: 120]
-    --nmodes=<nmodes>  Number of latitudinal spectral modes [default: 2e6]
-    --output=<dir>  Output directory [default: ../data/model/SWE_snapshots]
+    --nmodes=<nmodes>  Number of latitudinal spectral modes [default: 64]
+    --output=<dir>  Output directory [default: data/model/SWE_snapshots]
 """
 
 from docopt import docopt
+import os
 import numpy as np
 from scipy import integrate
 import dedalus.public as d3
@@ -48,7 +52,7 @@ def main(in_nu=1e5, in_umax=80, in_hpert=120, in_nmodes=2**6, savefolder="../dat
     R = 6.37122e6 * meter  # radius of the Earth = 1
     Omega = 7.292e-5 / second  # angular velocity of the Earth
     nu = my_nu
-    nu_hp = nu*(32)**2  # hyper-diffusion
+    nu_hp = nu / (32)**2  # hyper-diffusion
     g = 9.80616 * meter / second**2  # gravitational acceleration
     H = 1e4 * meter  # height atmosphere
 
@@ -144,7 +148,11 @@ if __name__ == "__main__":
 
     args = docopt(__doc__)
 
-    savefolder = args['--output'] + f"_{args['--nu']}_{args['--umax']}_{args['--hpert']}_{args['--nmodes']}"
+    savefolder = args['--output'] + f"/n{args['--nu']}_u{args['--umax']}_h{args['--hpert']}_m{args['--nmodes']}"
+    output_path = os.path.join(savefolder)
+
+    if not os.path.isdir(output_path):
+        os.mkdir(output_path)
 
     main(in_nu=float(args['--nu']), in_umax=float(args['--umax']), in_hpert=float(args['--hpert']),
          in_nmodes=int(eval(args['--nmodes'])), savefolder=savefolder)

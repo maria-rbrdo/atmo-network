@@ -73,6 +73,9 @@ def main(model, task, method, measure, lag, tau, filename, output, degree_distri
 #         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
 #         filename=args['<files>'], output=args['--output'])
 
-main("SWE", "vorticity", "PCC", "centrality", 23,
-     0.9, "../../data/euler/SWE_corr/CM_SWE_vorticity_PCC_s5_l23.h5", "../../data/euler/SWE_corr",
+u = 10
+main("SWE", "vorticity", "PCC", "centrality", 24,
+     0.9, f"../../data/euler/SWE_corr/n1e5_u{u}_h120_m64/CM_SWE_vorticity_PCC_s5_l24.h5",
+     f"../../data/euler/SWE_corr/n1e5_u{u}_h120_m64",
      degree_distribution=False)
+

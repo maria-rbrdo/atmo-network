@@ -8,14 +8,20 @@ To plot the data using e.g. 1 processes:
     $ mpiexec -n 1 python3 plot_plane.py data/model/SWE_snapshots/*.h5
     $ mpiexec -n 1 python3 plot_plane.py data/model/TSWE_snapshots/*.h5
 
+To make a movie with resulting files run:
+    $ import os
+    $ output = "data/model/SWE_frames/n1e5_u10_h120_m64"
+    $ os.system(f"ffmpeg -r 1 -i {output}/write_%06d.png -vcodec mpeg4 -y {output}/movie.mp4")
+
 Usage:
-    plot_sphere.py <files>... [--output=<dir>]
+    dedalus/plot_plane.py <files>... [--output=<dir>]
 
 Options:
     --output=<dir>  Output directory [default: ./data/model/frames_plane]
 
 """
 
+import os
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
@@ -37,7 +43,8 @@ class OOMFormatter(matplotlib.ticker.ScalarFormatter):
         self.format = self.fformat
         if self._useMathText:
              self.format = r'$\mathdefault{%s}$' % self.format
-def main(filename, start, count, output):
+
+def main(filename, start, count, output, movie = True):
     """Create plane plots of height and vorticity"""
 
     # select tasks
