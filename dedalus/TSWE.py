@@ -53,8 +53,8 @@ coords = d3.S2Coordinates('theta', 'phi')
 dist = d3.Distributor(coords, dtype=dtype)
 basis = d3.SphereBasis(coords, (Ntheta, Nphi), radius=R, dealias=dealias, dtype=dtype)
 theta, phi = dist.local_grids(basis)
-lat = np.pi / 2 - phi + 0 * theta  # define latitude
-lon = np.pi - 0 * phi - theta  # define longitude
+lat = np.pi / 2 - phi + 0 * theta  # define latitude in rad
+lon = np.pi - 0 * phi - theta  # define longitude in rad BETWEEN -pi and pi
 
 # Fields
 u = dist.VectorField(coords, name='u', bases=basis)  # velocity field

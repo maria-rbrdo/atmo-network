@@ -60,7 +60,6 @@ def main(filename, start, count, output, movie = True):
     # create figure
     fig = plt.figure(figsize=(20, 5*n_tasks+1))
     plt.rc('text', usetex=True)
-    plt.rc('font', family='serif')
     plt.rcParams.update({'font.size': 25})
 
     # subplots
@@ -86,7 +85,7 @@ def main(filename, start, count, output, movie = True):
                     theta = dset.dims[1][0][:]
                     phi = dset.dims[2][0][:]
                     lat = (np.pi / 2 - phi)*180/np.pi  # define latitude
-                    lon = (np.pi - theta)*180/np.pi  # define longitude
+                    lon = theta*180/np.pi  # define longitude
 
                     data = dset[:]  # get data
                     base10 = np.floor(np.log10(abs(np.max(data))))  # power of ten data

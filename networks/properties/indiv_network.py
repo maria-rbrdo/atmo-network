@@ -21,21 +21,24 @@ import numpy as np
 from alive_progress import alive_bar
 from docopt import docopt
 import network_properties as net_prop
-from network_properties import calc_prob_distrib
+from network_properties import *
 
-def main(model, task, method, measure, lag, tau, filename, output, degree_distribution):
+def main(measure, tau, filename, output, prob_distrib=False):
 
     with h5py.File(filename, mode='r') as f:
 
         theta = f["theta"][:]  # get positions
         phi = f["phi"][:]
-        lon = (np.pi - theta) * 180 / np.pi  # define longitude
-        lat = (np.pi / 2 - phi) * 180 / np.pi  # define latitude
+        lon = theta  # define longitude in rad
+        lat = (np.pi / 2 - phi)  # define latitude in rad
 
-        folder_name = f"/{model}_{task}_{method}_{measure}_s{int(len(f.keys())-2)}_l{lag}_t{int(tau*100)}/"
+        name = filename.split("/")[-1].split(".")[0]+f"_{measure}_t{tau}"
+        folder_name = f"/{name}/"
         output_path = os.path.dirname(output+folder_name)
         if not os.path.exists(output_path):
             os.mkdir(output_path)
+
+        df = pd.DataFrame(columns=["t", "vals"])
 
         with alive_bar(len(f.keys()) - 2, force_tty=True) as bar:
             for k in set(f.keys()) - {"theta", "phi"}:
@@ -43,27 +46,31 @@ def main(model, task, method, measure, lag, tau, filename, output, degree_distri
                 #%% Load data
                 cm = f[k][:]  # get correlation data
                 np.fill_diagonal(cm, 0)  # take out diagonal
-                cm = np.abs(cm) # take absolute value
+                cm = np.abs(cm)  # take absolute value
                 cm[np.abs(cm) <= tau] = 0  # impose threshold
-                #cm = np.where(cm > 0, 1, np.where(cm < 0, -1, 0))  # unweighted matrix
+                # cm = np.where(cm > 0, 1, np.where(cm < 0, -1, 0))  # unweighted matrix
 
                 times = [int(s) for s in k.split('_') if s.isdigit()]  # get times
 
-                #%% Centrality
-                savename = output + folder_name + 'write_{:06}.png'.format(times[2])
+                #%% Measure
+                savename = output + folder_name + 'write_{:06}.png'.format(times[-1])
                 try:  # measures: centrality, clustering, closeness, betweeness, eigenvector
                     function = getattr(net_prop, 'calc_'+measure)
-                    net = function(cm, lon, lat, times, savename, dpi=200)
+                    net, _ = function(cm, lon, lat, times, savename, dpi=200)
                 except:
                     raise ValueError(f"Unknown measure: {measure}.")
 
-                #%% Cumulative degree distribution
-                if degree_distribution is True:
-                    savename = output + folder_name + "degdistrib_" + 'write_{:06}.png'.format(times[2])
-                    _ = calc_prob_distrib(net, measure, savename)
+                #%% Save data
+                if prob_distrib is True:
+                    vals = net.reshape(-1)
+                    new_rows = pd.DataFrame({"time": [times[0]] * len(vals), "strength": vals})
+                    df = new_rows.copy() if df.empty else pd.concat([df, new_rows], ignore_index=True)
 
                 #%% Update bar
                 bar()
+
+            if prob_distrib is True:
+                plot_hist_line(df, output + folder_name + "prob_distrib.png", n_bins=250)
 
 #if __name__ == "__main__":
 
@@ -73,9 +80,7 @@ def main(model, task, method, measure, lag, tau, filename, output, degree_distri
 #         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
 #         filename=args['<files>'], output=args['--output'])
 
-u = 10
-main("SWE", "vorticity", "PCC", "centrality", 24,
-     0.9, f"../../data/euler/SWE_corr/n1e5_u{u}_h120_m64/CM_SWE_vorticity_PCC_s5_l24.h5",
+u = 40
+main("centrality", 0.9, f"../../data/euler/SWE_corr/n1e5_u{u}_h120_m64/CM_SWE_velocity_PCC_s5_l24.h5",
      f"../../data/euler/SWE_corr/n1e5_u{u}_h120_m64",
-     degree_distribution=False)
-
+     prob_distrib=False)

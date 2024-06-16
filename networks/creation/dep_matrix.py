@@ -3,6 +3,8 @@ This script takes the results of the SWE/TSWE simulations, splits them into
 segments and finds the dependence adjacency matrices between all grid points during each
 segment. This can be done using:
     - kinetic energy (task = velocity)
+    - vorticity (task = vorticity)
+    - height (task = height)
 The available methods are:
     - linear correlation (method = PCC)
     - mutual information (method = MI)
@@ -158,17 +160,17 @@ def main(model, task, method, segments, lag, filename, output):
     os.remove(file_path1)
     print(f"Previous file '{file_path1}' deleted successfully.")
 
-#if __name__ == "__main__":
+if __name__ == "__main__":
 
-#    args = docopt(__doc__)
+    args = docopt(__doc__)
 
-#    output_path = os.path.join(args['--output'])
+    output_path = os.path.join(args['--output'])
 
-#    if not os.path.isdir(output_path):
-#        os.mkdir(output_path)
+    if not os.path.isdir(output_path):
+        os.mkdir(output_path)
 
-#    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
-#         lag=int(args['--lag']), filename=args['<files>'], output=args['--output'])
+    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
+         lag=int(args['--lag']), filename=args['<files>'], output=args['--output'])
 
-main("SWE", "vorticity", "PCC", segments=15, lag=23,
-     filename="../../data/model/SWE_snapshots/n1e5_u10_h120_m64/n1e5_u10_h120_m64_s1.h5", output="../../data/euler/SWE_corr")
+#main("SWE", "vorticity", "PCC", segments=15, lag=23,
+#     filename="../../data/model/SWE_snapshots/n1e5_u10_h120_m64/n1e5_u10_h120_m64_s1.h5", output="../../data/euler/SWE_corr")

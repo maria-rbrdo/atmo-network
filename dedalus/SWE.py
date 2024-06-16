@@ -73,8 +73,8 @@ def main(in_nu=1e5, in_umax=80, in_hpert=120, in_nmodes=2**6, savefolder="../dat
     dist = d3.Distributor(coords, dtype=dtype)
     basis = d3.SphereBasis(coords, (ntheta, nphi), radius=R, dealias=dealias, dtype=dtype)
     theta, phi = dist.local_grids(basis)
-    lat = np.pi / 2 - phi + 0 * theta  # define latitude
-    lon = np.pi - 0 * phi - theta  # define longitude
+    lat = np.pi / 2 - phi + 0 * theta  # define latitude in rad
+    lon = np.pi - 0 * phi - theta  # define longitude in rad BETWEEN -pi and pi
 
     # Fields
     u = dist.VectorField(coords, name='u', bases=basis)  # velocity field
