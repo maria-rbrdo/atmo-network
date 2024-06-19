@@ -7,17 +7,17 @@ import scipy.stats as stats
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-def plot_matrix(matrix, measure, lon, lat, times, savename, dpi=200):
+def plot_matrix(matrix, measure, lon, lat, times, savename, dpi=200, my_cmap=None, my_center=None):
     # settings
     plt.rcParams.update({'font.size': 25})
 
     # select colormap depending on whether all values have the same sign or not
-    if np.any(matrix<0) & np.any(matrix>0):
-        my_cmap = "icefire"  # sns.diverging_palette(150, 275, s=80, l=55, n=9, as_cmap=True)
-        my_center = 0
-    else:
-        my_cmap = "mako"
-        my_center = None
+    if my_cmap is None:
+        if np.any(matrix < 0) & np.any(matrix > 0):
+            my_cmap = "icefire"  # sns.diverging_palette(150, 275, s=80, l=55, n=9, as_cmap=True)
+            my_center = 0
+        else:
+            my_cmap = "mako"
 
     # make figure
     fig, ax = plt.subplots(figsize=(20, 7))

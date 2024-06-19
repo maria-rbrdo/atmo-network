@@ -44,21 +44,21 @@ def main(measure, tau, filename, output, prob_distrib=False):
             for k in set(f.keys()) - {"theta", "phi"}:
 
                 #%% Load data
-                cm = f[k][:]  # get correlation data
-                np.fill_diagonal(cm, 0)  # take out diagonal
-                cm = np.abs(cm)  # take absolute value
-                cm[np.abs(cm) <= tau] = 0  # impose threshold
-                # cm = np.where(cm > 0, 1, np.where(cm < 0, -1, 0))  # unweighted matrix
+                am = f[k][:]  # get correlation data
+                np.fill_diagonal(am, 0)  # take out diagonal
+                am = np.abs(am)  # take absolute value
+                am[np.abs(am) <= tau] = 0  # impose threshold
+                #am = np.where(am > 0, 1, np.where(am < 0, -1, 0))  # unweighted matrix
 
                 times = [int(s) for s in k.split('_') if s.isdigit()]  # get times
 
                 #%% Measure
                 savename = output + folder_name + 'write_{:06}.png'.format(times[-1])
-                try:  # measures: centrality, clustering, closeness, betweeness, eigenvector
-                    function = getattr(net_prop, 'calc_'+measure)
-                    net, _ = function(cm, lon, lat, times, savename, dpi=200)
-                except:
-                    raise ValueError(f"Unknown measure: {measure}.")
+                if measure == "centrality":
+                    net, _ = calc_centrality(am, lon, lat, times, savename, min_dist=10000, max_dist=np.inf)
+                else:  # measures: centrality, clustering, closeness, betweeness, eigenvector
+                    function = getattr(net_prop, 'calc_' + measure)
+                    net = function(am, lon, lat, times, savename)
 
                 #%% Save data
                 if prob_distrib is True:
@@ -80,7 +80,8 @@ def main(measure, tau, filename, output, prob_distrib=False):
 #         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
 #         filename=args['<files>'], output=args['--output'])
 
-u = 40
-main("centrality", 0.9, f"../../data/euler/SWE_corr/n1e5_u{u}_h120_m64/CM_SWE_velocity_PCC_s5_l24.h5",
+u = 80
+main("centrality", 0.9,
+     f"../../data/euler/SWE_corr/n1e5_u{u}_h120_m64/CM_SWE_vorticity_PCC_s5_l6to23.h5",
      f"../../data/euler/SWE_corr/n1e5_u{u}_h120_m64",
      prob_distrib=False)

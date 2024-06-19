@@ -165,6 +165,6 @@ def main(model, filename, output, alpha=0, step=1):
 #    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
 #         lag=int(args['--lag']), filename=args['<files>'], output=args['--output'])
 
-main(model="SWE", step=72, alpha=1/2,
+main(model="SWE", step=72, alpha=0,
      filename="../../data/model/SWE_snapshots/n1e5_u80_h120_m64/n1e5_u80_h120_m64_s1.h5",
      output="../../data/euler/SWE_vort/n1e5_u80_h120_m64")

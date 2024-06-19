@@ -31,7 +31,8 @@ import os
 from docopt import docopt
 from alive_progress import alive_bar
 
-def PCC(data, max_lag):
+#%% PCC and MI
+def PCC(data, max_lag=0, min_lag=0):
     """Find linear Pearson correlation matrix from data with (lag = True) or without
      (lag = False) lag.
 
@@ -40,14 +41,16 @@ def PCC(data, max_lag):
 
     if max_lag == 0:
         return np.corrcoef(data)
-    elif type(max_lag) is int and max_lag > 0:
-        with (alive_bar(max_lag, force_tty=True) as bar):
 
-            cm = np.zeros(shape=(data.shape[0],data.shape[0]))  # zero lag
+    elif type(max_lag) is int and type(min_lag) is int and max_lag > 0 and min_lag >= 0:
+        with (alive_bar(max_lag-min_lag, force_tty=True) as bar):
+
+            lm = np.zeros(shape=(data.shape[0], data.shape[0]))  # lag matrix
+            cm = np.zeros(shape=(data.shape[0], data.shape[0]))  # correlation matrix (NO ZERO LAG)
             bar()  # update bar
 
             # Positive lags — from j to i:
-            for lag in range(1, max_lag):
+            for lag in range(min_lag, max_lag):
 
                 data_i = data[:, lag:]  # series i -> moving forewards
                 data_j = data[:, :-lag]  # series j -> moving backwards
@@ -61,18 +64,21 @@ def PCC(data, max_lag):
                 corr = cov[:int(len(cov) / 2), int(len(cov) / 2):] / np.sqrt(var_ij)  # correlation (normalised var)
 
                 cm = np.where(np.abs(cm) >= np.abs(corr), cm, corr)  # store biggest entries
+                lm = np.where(np.abs(cm) >= np.abs(corr), lm, lag * np.ones_like(lm))  # store the lag
 
                 bar()  # update bar
 
         # only keep the link directions with the largest absolute value
         cm = np.where(np.abs(cm) > np.abs(cm.T), cm, np.zeros_like(cm))
-        return cm
+        lm = np.where(np.abs(cm) > np.abs(cm.T), lm, np.zeros_like(lm))
+
+        return cm, lm
     else:
         raise ValueError('lag must be an integer greater than zero.')
 
-# def MI(lagged):
 
-def main(model, task, method, segments, lag, filename, output):
+#%%
+def main(model, task, method, segments, max_lag, min_lag, filename, output):
     """Find dependence matrices and store them."""
 
     # %% Prepare directory
@@ -85,7 +91,7 @@ def main(model, task, method, segments, lag, filename, output):
         print(f"Previous file '{file_path1}' deleted successfully.")
     except:
         pass
-    file_path2 = output + f'/CM_{model}_{task}_{method}_s{segments}_l{lag}.h5'
+    file_path2 = output + f'/CM_{model}_{task}_{method}_s{segments}_l{min_lag}to{max_lag}.h5'
     try:
         os.remove(file_path2)
         print(f"Previous file '{file_path2}' deleted successfully.")
@@ -137,13 +143,16 @@ def main(model, task, method, segments, lag, filename, output):
 
         t_step = int(n_t / segments)  # calculate the number of timesteps on each slice
         dt = t[1]  # timestep
-        lag = int(lag/dt)  # lag
+        max_lag = int(max_lag/dt)  # lag
+        min_lag = int(min_lag/dt)  # lag
 
         with h5py.File(file_path1, mode='r') as ddata:
             for i in range(segments):
                 # find matrix
                 if method == "PCC":
-                    correlation_matrix = PCC(ddata["data"][:, i * t_step:(i + 1) * t_step], lag)
+                    correlation_matrix, lag_matrix = PCC(ddata["data"][:, i * t_step:(i + 1) * t_step],
+                                                         max_lag=max_lag, min_lag=min_lag)
+                    lag_matrix = lag_matrix * dt  # from steps to hours
                 elif method == "MI":
                     print("pepe")
                 else:
@@ -153,24 +162,27 @@ def main(model, task, method, segments, lag, filename, output):
                 start_time = int(round(t[i * t_step], 3) * 1000)
                 end_time = int(round(t[(i + 1) * t_step - 1], 3) * 1000)
                 key = "t_" + str(start_time) + "_" + str(end_time) + "_" + str(i)
+
                 with h5py.File(file_path2, mode='a') as store:
                     store.create_dataset(key, data=correlation_matrix)
+                    store.create_dataset(key+"_lags", data=lag_matrix)
 
     # remove file storing intermediate data
     os.remove(file_path1)
     print(f"Previous file '{file_path1}' deleted successfully.")
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
 
-    args = docopt(__doc__)
+#    args = docopt(__doc__)
 
-    output_path = os.path.join(args['--output'])
+#    output_path = os.path.join(args['--output'])
 
-    if not os.path.isdir(output_path):
-        os.mkdir(output_path)
+#    if not os.path.isdir(output_path):
+#        os.mkdir(output_path)
 
-    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
-         lag=int(args['--lag']), filename=args['<files>'], output=args['--output'])
+#    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
+#         lag=int(args['--lag']), filename=args['<files>'], output=args['--output'])
 
-#main("SWE", "vorticity", "PCC", segments=15, lag=23,
-#     filename="../../data/model/SWE_snapshots/n1e5_u10_h120_m64/n1e5_u10_h120_m64_s1.h5", output="../../data/euler/SWE_corr")
+main("SWE", "vorticity", "PCC", segments=1, max_lag=24, min_lag=0,
+     filename="../../data/model/SWE_snapshots/n1e5_u80_h120_m64/n1e5_u80_h120_m64_s1.h5",
+     output="../../data/euler/SWE_corr/n1e5_u80_h120_m64")
