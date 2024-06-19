@@ -32,6 +32,32 @@ def calc_centrality(am, lon, lat, times, savename, dpi=200, min_dist=0, max_dist
 
     return in_centrality_matrix, out_centrality_matrix
 
+#%% AVERAGE CONNECTIONS
+def calc_average_connections(am, lon, lat, times, savename, dpi=200, min_dist=0, max_dist=np.inf):
+    # discard edges shorter than min_dist / longer than max_dist
+    if min_dist != 0 or max_dist != np.inf:
+        dist_matrix = calc_distance_matrix(lat, lat, lon, lon)
+        am[dist_matrix < min_dist] = 0
+        am[dist_matrix > max_dist] = 0
+
+    # calculate centrality
+    out_centrality = np.mean(am, 0)
+    in_centrality = np.mean(am, 1)
+
+    out_centrality_matrix = out_centrality.reshape(-1, (lon == 0).sum())
+    in_centrality_matrix = in_centrality.reshape(-1, (lon == 0).sum())
+
+    # generate plot
+    index = savename.rfind('.png')
+    savename_out = savename[:index] + "_out" + savename[index:]
+    savename_in = savename[:index] + "_in" + savename[index:]
+    savename_diff = savename[:index] + "_diff" + savename[index:]
+
+    plot_matrix(out_centrality_matrix, "average out edges", lon, lat, times, savename_out, dpi=dpi)
+    plot_matrix(in_centrality_matrix, "average in edges", lon, lat, times, savename_in, dpi=dpi)
+
+    return in_centrality_matrix, out_centrality_matrix
+
 #%% LOCAL CLUSTERING
 def calc_clustering(am, lon, lat, times, savename, dpi=200):
 
@@ -180,4 +206,4 @@ def calc_distance_matrix(lat1, lat2, lon1, lon2):
     a = np.sin(Dlat / 2) ** 2 + np.cos(lat1_grid) * np.cos(lat2_grid) * np.sin(Dlon / 2) ** 2
     c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - np.round(a, 15)))
 
-    return R*c
+    return R * c

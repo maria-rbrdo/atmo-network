@@ -40,8 +40,10 @@ def main(measure, tau, filename, output, prob_distrib=False):
 
         df = pd.DataFrame(columns=["t", "vals"])
 
-        with alive_bar(len(f.keys()) - 2, force_tty=True) as bar:
-            for k in set(f.keys()) - {"theta", "phi"}:
+        with alive_bar(int((len(f.keys()) - 2)/2), force_tty=True) as bar:
+            keys_lags = {k for k in f.keys() if k.endswith("_lags")}
+            for k in set(f.keys()) - {"theta", "phi"} - keys_lags:
+            # for k in keys_lags:
 
                 #%% Load data
                 am = f[k][:]  # get correlation data
@@ -82,6 +84,6 @@ def main(measure, tau, filename, output, prob_distrib=False):
 
 u = 80
 main("centrality", 0.9,
-     f"../../data/euler/SWE_corr/n1e5_u{u}_h120_m64/CM_SWE_vorticity_PCC_s5_l6to23.h5",
+     f"../../data/euler/SWE_corr/n1e5_u{u}_h120_m64/CM_SWE_vorticity_PCC_s5_l0to24.h5",
      f"../../data/euler/SWE_corr/n1e5_u{u}_h120_m64",
      prob_distrib=False)

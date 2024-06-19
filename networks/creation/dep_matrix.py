@@ -50,9 +50,9 @@ def PCC(data, max_lag=0, min_lag=0):
             bar()  # update bar
 
             # Positive lags — from j to i:
-            for lag in range(min_lag, max_lag):
+            for lag in range(min_lag + 1, max_lag):
 
-                data_i = data[:, lag:]  # series i -> moving forewards
+                data_i = data[:, lag:]  # series i -> moving forwards
                 data_j = data[:, :-lag]  # series j -> moving backwards
 
                 cov = np.cov(data_i, data_j)  # compute covariance
@@ -63,14 +63,16 @@ def PCC(data, max_lag=0, min_lag=0):
 
                 corr = cov[:int(len(cov) / 2), int(len(cov) / 2):] / np.sqrt(var_ij)  # correlation (normalised var)
 
-                cm = np.where(np.abs(cm) >= np.abs(corr), cm, corr)  # store biggest entries
-                lm = np.where(np.abs(cm) >= np.abs(corr), lm, lag * np.ones_like(lm))  # store the lag
+                mask = np.abs(cm) >= np.abs(corr)
+                cm = np.where(mask, cm, corr)  # store biggest entries
+                lm = np.where(mask, lm, lag * np.ones_like(lm))  # store the lag
 
                 bar()  # update bar
 
         # only keep the link directions with the largest absolute value
-        cm = np.where(np.abs(cm) > np.abs(cm.T), cm, np.zeros_like(cm))
-        lm = np.where(np.abs(cm) > np.abs(cm.T), lm, np.zeros_like(lm))
+        mask = np.abs(cm) > np.abs(cm.T)
+        cm = np.where(mask, cm, np.zeros_like(cm))
+        lm = np.where(mask, lm, np.zeros_like(lm))
 
         return cm, lm
     else:
@@ -150,8 +152,8 @@ def main(model, task, method, segments, max_lag, min_lag, filename, output):
             for i in range(segments):
                 # find matrix
                 if method == "PCC":
-                    correlation_matrix, lag_matrix = PCC(ddata["data"][:, i * t_step:(i + 1) * t_step],
-                                                         max_lag=max_lag, min_lag=min_lag)
+                    correlation_matrix, lag_matrix = PCC(ddata["data"][:, i * t_step:(i + 1) * t_step], max_lag=max_lag,
+                                                         min_lag=min_lag)
                     lag_matrix = lag_matrix * dt  # from steps to hours
                 elif method == "MI":
                     print("pepe")
@@ -183,6 +185,6 @@ def main(model, task, method, segments, max_lag, min_lag, filename, output):
 #    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
 #         lag=int(args['--lag']), filename=args['<files>'], output=args['--output'])
 
-main("SWE", "vorticity", "PCC", segments=1, max_lag=24, min_lag=0,
-     filename="../../data/model/SWE_snapshots/n1e5_u80_h120_m64/n1e5_u80_h120_m64_s1.h5",
-     output="../../data/euler/SWE_corr/n1e5_u80_h120_m64")
+main("SWE", "vorticity", "PCC", segments=5, max_lag=24, min_lag=0,
+     filename="../../data/model/SWE_snapshots/n1e5_u10_h120_m64/n1e5_u10_h120_m64_s1.h5",
+     output="../../data/euler/SWE_corr/n1e5_u10_h120_m64")
