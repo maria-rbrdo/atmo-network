@@ -186,5 +186,5 @@ def main(model, task, method, segments, max_lag, min_lag, filename, output):
 #         lag=int(args['--lag']), filename=args['<files>'], output=args['--output'])
 
 main("SWE", "vorticity", "PCC", segments=5, max_lag=24, min_lag=0,
-     filename="../../data/model/SWE_snapshots/n1e5_u10_h120_m64/n1e5_u10_h120_m64_s1.h5",
-     output="../../data/euler/SWE_corr/n1e5_u10_h120_m64")
+     filename="../../data/model/SWE_snapshots/n1e5_u80_h120_m64/n1e5_u80_h120_m64_s1.h5",
+     output="../../data/euler/SWE_corr/n1e5_u80_h120_m64")

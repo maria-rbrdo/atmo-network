@@ -39,10 +39,11 @@ def main(measure, tau, filename, output, prob_distrib=False):
             os.mkdir(output_path)
 
         df = pd.DataFrame(columns=["t", "vals"])
+        keys_lags = {k for k in f.keys() if k.endswith("_lags")}
+        keys_data = set(f.keys()) - {"theta", "phi"} - keys_lags
 
-        with alive_bar(int((len(f.keys()) - 2)/2), force_tty=True) as bar:
-            keys_lags = {k for k in f.keys() if k.endswith("_lags")}
-            for k in set(f.keys()) - {"theta", "phi"} - keys_lags:
+        with alive_bar(int(len(keys_data)), force_tty=True) as bar:
+            for k in keys_data:
             # for k in keys_lags:
 
                 #%% Load data
@@ -50,17 +51,18 @@ def main(measure, tau, filename, output, prob_distrib=False):
                 np.fill_diagonal(am, 0)  # take out diagonal
                 am = np.abs(am)  # take absolute value
                 am[np.abs(am) <= tau] = 0  # impose threshold
-                #am = np.where(am > 0, 1, np.where(am < 0, -1, 0))  # unweighted matrix
 
                 times = [int(s) for s in k.split('_') if s.isdigit()]  # get times
 
                 #%% Measure
                 savename = output + folder_name + 'write_{:06}.png'.format(times[-1])
                 if measure == "centrality":
-                    net, _ = calc_centrality(am, lon, lat, times, savename, min_dist=10000, max_dist=np.inf)
+                    net, _ = calc_centrality(am, lon, lat, times, savename, min_dist=0, max_dist=np.inf)
                 else:  # measures: centrality, clustering, closeness, betweeness, eigenvector
                     function = getattr(net_prop, 'calc_' + measure)
                     net = function(am, lon, lat, times, savename)
+
+                #%% Plot
 
                 #%% Save data
                 if prob_distrib is True:
@@ -84,6 +86,6 @@ def main(measure, tau, filename, output, prob_distrib=False):
 
 u = 80
 main("centrality", 0.9,
-     f"../../data/euler/SWE_corr/n1e5_u{u}_h120_m64/CM_SWE_vorticity_PCC_s5_l0to24.h5",
-     f"../../data/euler/SWE_corr/n1e5_u{u}_h120_m64",
+     f"../../data/euler/SWE_vort/n1e5_u{u}_h120_m64/CM_SWE.h5",
+     f"../../data/euler/SWE_vort/n1e5_u{u}_h120_m64/",
      prob_distrib=False)

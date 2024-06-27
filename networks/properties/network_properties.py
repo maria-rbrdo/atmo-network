@@ -6,7 +6,7 @@ import scipy
 from plotting import *
 
 #%% CENTRALITY
-def calc_centrality(am, lon, lat, times, savename, dpi=200, min_dist=0, max_dist=np.inf):
+def calc_centrality(am, lon, lat, min_dist=0, max_dist=np.inf):
     # discard edges shorter than min_dist / longer than max_dist
     if min_dist != 0 or max_dist != np.inf:
         dist_matrix = calc_distance_matrix(lat, lat, lon, lon)
@@ -20,94 +20,63 @@ def calc_centrality(am, lon, lat, times, savename, dpi=200, min_dist=0, max_dist
     out_centrality_matrix = out_centrality.reshape(-1, (lon == 0).sum())
     in_centrality_matrix = in_centrality.reshape(-1, (lon == 0).sum())
 
-    # generate plot
-    index = savename.rfind('.png')
-    savename_out = savename[:index] + "_out" + savename[index:]
-    savename_in = savename[:index] + "_in" + savename[index:]
-    savename_diff = savename[:index] + "_diff" + savename[index:]
-
-    plot_matrix(out_centrality_matrix, "normalised out centrality", lon, lat, times, savename_out, dpi=dpi)
-    plot_matrix(in_centrality_matrix, "normalised in centrality", lon, lat, times, savename_in, dpi=dpi)
-    plot_matrix(in_centrality_matrix-out_centrality_matrix, "normalised in - out centrality", lon, lat, times, savename_diff, dpi=dpi)
-
     return in_centrality_matrix, out_centrality_matrix
 
 #%% AVERAGE CONNECTIONS
-def calc_average_connections(am, lon, lat, times, savename, dpi=200, min_dist=0, max_dist=np.inf):
+def calc_average_connections(am, lon, lat, min_dist=0, max_dist=np.inf):
     # discard edges shorter than min_dist / longer than max_dist
     if min_dist != 0 or max_dist != np.inf:
         dist_matrix = calc_distance_matrix(lat, lat, lon, lon)
         am[dist_matrix < min_dist] = 0
         am[dist_matrix > max_dist] = 0
 
-    # calculate centrality
+    # calculate average connections
     out_centrality = np.mean(am, 0)
     in_centrality = np.mean(am, 1)
 
     out_centrality_matrix = out_centrality.reshape(-1, (lon == 0).sum())
     in_centrality_matrix = in_centrality.reshape(-1, (lon == 0).sum())
 
-    # generate plot
-    index = savename.rfind('.png')
-    savename_out = savename[:index] + "_out" + savename[index:]
-    savename_in = savename[:index] + "_in" + savename[index:]
-    savename_diff = savename[:index] + "_diff" + savename[index:]
-
-    plot_matrix(out_centrality_matrix, "average out edges", lon, lat, times, savename_out, dpi=dpi)
-    plot_matrix(in_centrality_matrix, "average in edges", lon, lat, times, savename_in, dpi=dpi)
-
     return in_centrality_matrix, out_centrality_matrix
 
 #%% LOCAL CLUSTERING
-def calc_clustering(am, lon, lat, times, savename, dpi=200):
+def calc_clustering(am, lon, lat):
 
     g = gt.Graph(scipy.sparse.lil_matrix(am))
     clust = gt.local_clustering(g)
     clust_matrix = clust.get_array().reshape(-1, (lon == 0).sum())
 
-    # generate plot
-    plot_matrix(clust_matrix, "local clustering", lon, lat, times, savename, dpi=dpi)
-
-    return clust.get_array()
+    return clust_matrix
 
 #%% CLOSENESS CENTRALITY
-def calc_closeness(am, lon, lat, times, savename, dpi=200):
+def calc_closeness(am, lon, lat):
 
     g = gt.Graph(scipy.sparse.lil_matrix(am))
     close = gt.closeness(g)
     close_matrix = close.get_array().reshape(-1, (lon == 0).sum())
 
-    # generate plot
-    plot_matrix(close_matrix, "closeness centrality", lon, lat, times, savename, dpi=dpi)
-
-    return close.get_array()
+    return close_matrix
 
 #%% BETWEENESS CENTRALITY
-def calc_betweeness(am, lon, lat, times, savename, dpi=200):
+def calc_betweeness(am, lon, lat):
 
     g = gt.Graph(scipy.sparse.lil_matrix(am))
     between = gt.closeness(g)
     between_matrix = between.get_array().reshape(-1, (lon == 0).sum())
 
-    # generate plot
-    plot_matrix(between_matrix, "betweeness centrality", lon, lat, times, savename, dpi=dpi)
-
-    return between.get_array()
+    return between_matrix
 
 #%% EIGENVECTOR CENTRALITY
-def calc_eigenvector(am, lon, lat, times, savename, dpi=200):
+def calc_eigenvector(am, lon, lat):
     g = gt.Graph(scipy.sparse.lil_matrix(am))
     _, eigen = gt.eigenvector(g)
     eigen_matrix = eigen.get_array().reshape(-1, (lon == 0).sum())
 
-    # generate plot
-    plot_matrix(eigen_matrix, "eigenvector centrality", lon, lat, times, savename, dpi=dpi)
-
-    return eigen.get_array()
+    return eigen_matrix
 
 
 # %% COMMUNITY DETECTION
-def calc_communities(am, lon, lat, times, savename, dpi=200):
+def calc_communities(am, lon, lat):
     g = gt.Graph(scipy.sparse.lil_matrix(am))
     state = gt.minimize_blockmodel_dl(g)
     com = state.get_blocks()
@@ -115,8 +84,7 @@ def calc_communities(am, lon, lat, times, savename, dpi=200):
     print(np.unique(com))
     com_matrix = com.get_array().reshape(-1, (lon == 0).sum())
 
-    # generate plot
-    plot_matrix(com_matrix, "communities", lon, lat, times, savename, my_cmap="rainbow")
+    return com_matrix
 
 
 #%% PROBABILITY DISTRIBUTION

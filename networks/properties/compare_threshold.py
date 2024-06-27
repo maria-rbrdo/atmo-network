@@ -11,9 +11,11 @@ def main(filename, output, indep_var, indep_var_name, dep_var_name):
         lon = theta  # longitude in rad
         lat = (np.pi / 2 - phi)  # latitude in rad
         df = pd.DataFrame(columns=[indep_var_name, dep_var_name])
+        keys_lags = {k for k in f.keys() if k.endswith("_lags")}
+        keys_data = set(f.keys()) - {"theta", "phi"} - keys_lags
         for val in indep_var:
             print(f"{val}:")
-            for k in set(f.keys()) - {"theta", "phi"}:
+            for k in keys_data:
                 # load
                 cm = f[k][:]  # get correlation data
                 np.fill_diagonal(cm, 0)  # take out diagonal
