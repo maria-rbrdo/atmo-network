@@ -55,7 +55,6 @@ def main(measure, tau, filename, output, prob_distrib=False):
                 np.fill_diagonal(am, 0)  # take out diagonal
                 am = np.abs(am)  # take absolute value
                 am[np.abs(am) <= tau] = 0  # impose threshold
-                #am = np.where(am > 0, 1, np.where(am < 0, -1, 0))  # unweighted matrix
 
                 times = [int(s) for s in k.split('_') if s.isdigit()]  # get times
 
@@ -81,7 +80,7 @@ def main(measure, tau, filename, output, prob_distrib=False):
                     # generate plot
                     plot_matrix(net, measure, lon_matrix, lat_matrix, times, savename, dpi=dpi)
 
-            #%% Save data
+                #%% Save data
                 if prob_distrib is True:
                     vals = net.reshape(-1)
                     new_rows = pd.DataFrame({"time": [times[0]] * len(vals), "strength": vals})
@@ -101,8 +100,8 @@ def main(measure, tau, filename, output, prob_distrib=False):
 #         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
 #         filename=args['<files>'], output=args['--output'])
 
-u = 10
+u = 80
 main("centrality", 0.9,
-     f"../../data/euler/SWE_vort/n1e5_u{u}_h120_m64/CM_SWE.h5",
-     f"../../data/euler/SWE_vort/n1e5_u{u}_h120_m64/",
+     f"../../data/euler/SWE_corr/n1e5_u{u}_h120_m64/CM_SWE_vorticity_PCC_s5_l0to24.h5",
+     f"../../data/euler/SWE_corr/n1e5_u{u}_h120_m64/",
      prob_distrib=False)

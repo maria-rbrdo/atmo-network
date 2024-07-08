@@ -1,26 +1,24 @@
 """
-This script takes the results of the SWE/TSWE simulations, splits them into
-segments and finds the dependence adjacency matrices between all grid points during each
-segment. This can be done using:
-    - kinetic energy (task = velocity)
-    - vorticity (task = vorticity)
-    - height (task = height)
-The available methods are:
-    - linear correlation (method = PCC)
-    - mutual information (method = MI)
-which can be found at zero lag (lag = False) or with time lag (lag = True). Data is
-saved to a HDF5 file in the output directory specified.
+========================================================================================================================
+Correlation-Based Adjacency Matrix Building Script
+========================================================================================================================
+This script reads the HDF5 net-output file from the model, splits it into segments, and finds the correlation-based
+adjacency matrix between all grid points for each segment.
 
-e.g.:
-    $ python3 networks/creation/dep_matrix.py SWE velocity PCC --segments=1 --lag=24 data/model/SWE_snapshots/SWE_snapshots_s1.h5 --output=data/euler/SWE_corr
-
+Correlations can be found at zero lag (lag = False) or at time lag (lag = True). Data is saved to a HDF5 file in the
+output directory specified.
+------------------------------------------------------------------------------------------------------------------------
 Usage:
-    dep_matrix.py <model> <task> <method> [--segments=<seg>] [--lag=<lag>] <files> [--output=<dir>]
+    dep_matrix.py <files> <lmax> [--lmin=<lmin>] [--segments=<segments>]
 
 Options:
     --output=<dir>  Output directory [default: ./data/euler/networks]
     --segments=<seg>  Segments in which to break time series [default: 1]
     --lag=<lag>  Maximum lag considered [default: 0]
+------------------------------------------------------------------------------------------------------------------------
+Notes:
+- Available fields: ('h', 'd', 'q', 'z')
+------------------------------------------------------------------------------------------------------------------------
 """
 from pyexpat import model
 
@@ -32,12 +30,27 @@ from docopt import docopt
 from alive_progress import alive_bar
 
 #%% PCC and MI
-def PCC(data, max_lag=0, min_lag=0):
-    """Find linear Pearson correlation matrix from data with (lag = True) or without
-     (lag = False) lag.
+def PCC(data, max_lag, min_lag=0):
+    """
+        This function finds the Pearson correlation matrix from data. The
+        weight magnitude of each edge is the absolute value of the maximum
+        correlation.
 
-     The weight magnitude of each edge is the absolute value of the maximum correlation.
-     The sign of each weight indicates the direction of the interaction (E.g. C_ij>0 is from j to i)."""
+        ==========================================================================================
+        Parameters :
+        ------------------------------------------------------------------------------------------
+        Name    : Type              Description
+        ------------------------------------------------------------------------------------------
+        data    : np.array          Array of data where each row is the timeseries of a node.
+        max_lag : int               Maximum lag considered
+        min_lag : int, optional     Minimum lag considered [default: 0].
+        ==========================================================================================
+
+        Returns:
+        -------
+        numpy.ndarray
+            Adjacency matrix, with shape (nlon*nlat, nlon*nlat).
+        """
 
     if max_lag == 0:
         return np.corrcoef(data)
@@ -75,116 +88,92 @@ def PCC(data, max_lag=0, min_lag=0):
         lm = np.where(mask, lm, np.zeros_like(lm))
 
         return cm, lm
+
     else:
         raise ValueError('lag must be an integer greater than zero.')
 
 
 #%%
-def main(model, task, method, segments, max_lag, min_lag, filename, output):
-    """Find dependence matrices and store them."""
+def main(fpath, lmax, lmin=0, segments=1):
+    """
+        This function runs the script.
 
-    # %% Prepare directory
+        ==========================================================================================
+        Parameters :
+        ------------------------------------------------------------------------------------------
+        Name    : Type [units]          Description
+        ------------------------------------------------------------------------------------------
+        fpath   : string [-]            Path to the data file.
+        lmax : int [days]               Maximum lag considered.
+        lmin : int, optional [days]     Minimum lag considered [default: 0].
+        segments: int, optional [-]     Segments in which to break time series [default: 1].
+        ==========================================================================================
+        """
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # Prepare directory:
+    # ------------------------------------------------------------------------------------------------------------------
+
     print('Preparing directory...')
 
+    # obtain data from fpath
+    fld = os.path.basename(fpath).split("_")[0]
+    opath = os.path.dirname(fpath) + f'/CM_{model}_{fld}_s{segments}_l{lmin}to{lmax}.h5'
+
     # delete files from previous runs
-    file_path1 = output + f'/iterm_data.h5'
     try:
-        os.remove(file_path1)
-        print(f"Previous file '{file_path1}' deleted successfully.")
-    except:
-        pass
-    file_path2 = output + f'/CM_{model}_{task}_{method}_s{segments}_l{min_lag}to{max_lag}.h5'
-    try:
-        os.remove(file_path2)
-        print(f"Previous file '{file_path2}' deleted successfully.")
+        os.remove(opath)
+        print(f"Previous file '{opath}' deleted successfully.")
     except:
         pass
 
-    with h5py.File(filename, mode='r') as file:
+    # ------------------------------------------------------------------------------------------------------------------
+    # Run:
+    # ------------------------------------------------------------------------------------------------------------------
 
-        # %% Load data
+    with h5py.File(fpath, mode='r') as f:
+
+        # Loading data .................................................................................................
+
         print("Loading data...")
 
-        dset = file['tasks'][task]
+        lat = f['latitude'][:]
+        lon = f['longitude'][:]
+        t = f['time'][:]
 
-        # find coordinates
-        if task == "velocity":
-            theta = dset.dims[2][0][:]
-            phi = dset.dims[3][0][:]
-        else:
-            theta = dset.dims[1][0][:]
-            phi = dset.dims[2][0][:]
-        t = file['scales/sim_time'][:]
+        nlat, nlon, nt = len(lat), len(lon), len(t)
 
-        # get timeseries
-        data = dset[:]  # get data
-        if task == "velocity":
-            u = data[:, 0, :, :]  # east-west
-            v = data[:, 1, :, :]  # north-south
-            data = 1 / 2 * (u ** 2 + v ** 2)  # kinetic energy
-        n_t, n_theta, n_phi = data.shape
+        diter = int(nt / segments)  # iterations/slice
+        dt = t[1] - t[0]  # time-step
+        lmax = int(lmax/dt)  # max lag in iter
+        lmin = int(lmin/dt)  # min lag in iter
 
-        # keep data in a file to save RAM
-        ddata = data.reshape(n_t, -1).T
-        with h5py.File(file_path1, mode='a') as store:
-            store.create_dataset("data", data=ddata)
-        del data, ddata
+        with h5py.File(opath, mode='a') as store:
+            mlat = np.tile(lat, nlon)  # mesh latitude
+            mlon = np.repeat(lon, nlat)  # mesh longitude
+            store.create_dataset("latitude", data=mlat)
+            store.create_dataset("longitude", data=mlon)
 
-        # %% Get coordinates
-        print("Getting coordinates...")
-        theta_indices = np.repeat(theta, n_phi)
-        phi_indices = np.tile(phi, n_theta)
+        # Calculating correlation matrix ...............................................................................
 
-        # save coordinates
-        with h5py.File(file_path2, mode='a') as store:
-            store.create_dataset("theta", data=theta_indices)
-            store.create_dataset("phi", data=phi_indices)
+        print("Calculating correlation matrix...")
 
-        # %% Calculate dependence matrix
-        print("Calculating dependence matrix...")
+        for i in range(segments):
 
-        t_step = int(n_t / segments)  # calculate the number of timesteps on each slice
-        dt = t[1]  # timestep
-        max_lag = int(max_lag/dt)  # lag
-        min_lag = int(min_lag/dt)  # lag
+            cdata = f["data"][:, :, i*diter:(i+1)*diter].reshape(-1, nt)
+            mcorr, mlag = PCC(cdata, max_lag=lmax, min_lag=lmin)
+            mlag = mlag * dt  # from steps to hours
 
-        with h5py.File(file_path1, mode='r') as ddata:
-            for i in range(segments):
-                # find matrix
-                if method == "PCC":
-                    correlation_matrix, lag_matrix = PCC(ddata["data"][:, i * t_step:(i + 1) * t_step], max_lag=max_lag,
-                                                         min_lag=min_lag)
-                    lag_matrix = lag_matrix * dt  # from steps to hours
-                elif method == "MI":
-                    print("pepe")
-                else:
-                    raise ValueError(f"Unknown method: {method}. Please choose from: PCC and MI.")
+            # save matrix
+            tstart = int(round(t[i * diter], 3) * 1000)
+            tend = int(round(t[(i + 1)*diter-1], 3) * 1000)
+            key = "t_" + str(tstart) + "_" + str(tend) + "_" + str(i)
 
-                # save matrix
-                start_time = int(round(t[i * t_step], 3) * 1000)
-                end_time = int(round(t[(i + 1) * t_step - 1], 3) * 1000)
-                key = "t_" + str(start_time) + "_" + str(end_time) + "_" + str(i)
+            with h5py.File(opath, mode='a') as store:
+                store.create_dataset(key, data=mcorr)
+                store.create_dataset(key+"_lags", data=mlag)
 
-                with h5py.File(file_path2, mode='a') as store:
-                    store.create_dataset(key, data=correlation_matrix)
-                    store.create_dataset(key+"_lags", data=lag_matrix)
-
-    # remove file storing intermediate data
-    os.remove(file_path1)
-    print(f"Previous file '{file_path1}' deleted successfully.")
-
-#if __name__ == "__main__":
-
-#    args = docopt(__doc__)
-
-#    output_path = os.path.join(args['--output'])
-
-#    if not os.path.isdir(output_path):
-#        os.mkdir(output_path)
-
-#    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
-#         lag=int(args['--lag']), filename=args['<files>'], output=args['--output'])
-
-main("SWE", "vorticity", "PCC", segments=5, max_lag=24, min_lag=0,
-     filename="../../data/model/SWE_snapshots/n1e5_u80_h120_m64/n1e5_u80_h120_m64_s1.h5",
-     output="../../data/euler/SWE_corr/n1e5_u80_h120_m64")
+#%%
+if __name__ == "__main__":
+    args = docopt(__doc__)
+    main(fpath=args['<files>'], lmax=int(args['<lmax>']), lmin=int(args['--lmin']), segments=int(args['--segments']))

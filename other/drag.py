@@ -9,14 +9,17 @@ t = np.arange(0, 200, 25)  # days
 Phi, Lamb = np.meshgrid(phi, lamb, indexing='ij')
 
 r0 = 1/20 # days
-r = lambda phi, lamb: r0 * (1 - np.tanh(np.deg2rad((np.rad2deg(phi) - 10)/10))) * (phi < 0) + 0 * (phi > 0)
+r = lambda phi, lamb: r0 * (1 - np.tanh((phi-np.pi/18)/(np.pi/18)))
 
 # Plotting
 plt.rcParams.update({'font.size': 30})
-fig = plt.figure(figsize=(10, 5))
+fig = plt.figure(figsize=(10, 10))
 
-plt.plot(phi, r(phi, lamb))
-
+plt.plot(r(phi, lamb), np.rad2deg(phi), "k", linewidth=5)
+plt.grid(color='gray', linestyle='--', linewidth=1)
+plt.xlabel(r"Damping rate (days$^{−1}$)")
+plt.ylabel("Latitude (deg)")
+plt.ylim([-90, 90])
 # R = r(Phi, Lamb)
 # x = np.rad2deg(lamb)
 # y = np.rad2deg(phi)

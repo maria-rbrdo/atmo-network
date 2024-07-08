@@ -17,12 +17,15 @@ Options:
 
 import os
 import h5py
+import matplotlib.pyplot as plt
 import numpy as np
 from alive_progress import alive_bar
 from docopt import docopt
 import network_properties as net_prop
 from network_properties import *
+from plotting import *
 
+dpi = 200
 def main(measure, tau, filename, output, prob_distrib=False):
 
     with h5py.File(filename, mode='r') as f:
@@ -31,6 +34,9 @@ def main(measure, tau, filename, output, prob_distrib=False):
         phi = f["phi"][:]
         lon = theta  # define longitude in rad
         lat = (np.pi / 2 - phi)  # define latitude in rad
+        lon_matrix = lon.reshape(-1, (lon == 0).sum())
+        lat_matrix = lat.reshape(-1, (lon == 0).sum())
+        lon_unique = np.rad2deg(np.mean(np.flip(lat_matrix.T, 0), axis=1))
 
         name = filename.split("/")[-1].split(".")[0]+f"_{measure}_t{tau}"
         folder_name = f"/{name}/"
@@ -40,7 +46,14 @@ def main(measure, tau, filename, output, prob_distrib=False):
 
         df = pd.DataFrame(columns=["t", "vals"])
         keys_lags = {k for k in f.keys() if k.endswith("_lags")}
-        keys_data = set(f.keys()) - {"theta", "phi"} - keys_lags
+        keys_data = sorted(set(f.keys()) - {"theta", "phi"} - keys_lags)
+
+        # settings
+        plt.rcParams.update({'font.size': 25})
+        fig = plt.figure(figsize=(25, 10))
+        ax_in = fig.add_subplot(1, 4, 1)
+        ax_out = fig.add_subplot(1, 4, 2)
+        ax_diff = fig.add_subplot(1, 4, 3)
 
         with alive_bar(int(len(keys_data)), force_tty=True) as bar:
             for k in keys_data:
@@ -55,26 +68,29 @@ def main(measure, tau, filename, output, prob_distrib=False):
                 times = [int(s) for s in k.split('_') if s.isdigit()]  # get times
 
                 #%% Measure
-                savename = output + folder_name + 'write_{:06}.png'.format(times[-1])
                 if measure == "centrality":
-                    net, _ = calc_centrality(am, lon, lat, times, savename, min_dist=0, max_dist=np.inf)
-                else:  # measures: centrality, clustering, closeness, betweeness, eigenvector
-                    function = getattr(net_prop, 'calc_' + measure)
-                    net = function(am, lon, lat, times, savename)
-
-                #%% Plot
-
-                #%% Save data
-                if prob_distrib is True:
-                    vals = net.reshape(-1)
-                    new_rows = pd.DataFrame({"time": [times[0]] * len(vals), "strength": vals})
-                    df = new_rows.copy() if df.empty else pd.concat([df, new_rows], ignore_index=True)
+                    net, net_out = calc_centrality(am, lon, lat, min_dist=0, max_dist=np.inf)
+                    net_mean = np.mean(np.flip(net.T, 0), axis=1)
+                    net_out_mean = np.mean(np.flip(net_out.T, 0), axis=1)
+                    net_diff_mean = np.mean(np.flip((net-net_out).T, 0), axis=1)
+                    # generate plot
+                    ax_in.plot(net_mean, lon_unique, label=f"{int(times[0]) / 1000} hrs")
+                    ax_out.plot(net_out_mean, lon_unique, label=f"{int(times[0]) / 1000} hrs")
+                    ax_diff.plot(net_diff_mean, lon_unique, label=f"{int(times[0]) / 1000} hrs")
+                else:  # measures: clustering, closeness, betweeness, eigenvector
+                    print("Not implemented")
 
                 #%% Update bar
                 bar()
 
-            if prob_distrib is True:
-                plot_hist_line(df, output + folder_name + "prob_distrib.png", n_bins=250)
+            # save figure
+            ax_in.set_title("avg in centrality")
+            ax_out.set_title("avg out centrality")
+            ax_diff.set_title("avg in - out centrality")
+            plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+            savename = output + folder_name + 'averaged_' + measure + '.png'
+            fig.savefig(savename, dpi=dpi, bbox_inches='tight')
+            plt.close()
 
 #if __name__ == "__main__":
 
@@ -84,8 +100,8 @@ def main(measure, tau, filename, output, prob_distrib=False):
 #         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
 #         filename=args['<files>'], output=args['--output'])
 
-u = 80
+u = 10
 main("centrality", 0.9,
-     f"../../data/euler/SWE_vort/n1e5_u{u}_h120_m64/CM_SWE.h5",
-     f"../../data/euler/SWE_vort/n1e5_u{u}_h120_m64/",
+     f"../../data/euler/SWE_corr/n1e5_u{u}_h120_m64/CM_SWE_vorticity_PCC_s5_l0to24.h5",
+     f"../../data/euler/SWE_corr/n1e5_u{u}_h120_m64/",
      prob_distrib=False)

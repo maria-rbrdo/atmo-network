@@ -5,20 +5,19 @@ import matplotlib.pyplot as plt
 
 phi = np.linspace(-np.pi / 2, np.pi / 2, 250)  # rad
 lamb = np.linspace(0, 2*np.pi, 500)  # rad
-t = np.arange(0, 200, 25)  # days
+t = np.arange(25, 200, 25)  # days
 Phi, Lamb, T = np.meshgrid(phi, lamb, t, indexing='ij')
 
 H = 10000  # m
 A0 = 0.15*H
-tau = 100  # days
-w0 = -0.02
+tau = 100  # days1
+Omega = np.deg2rad(360)  # rad/day
+w0 = -0.005 * 2 * Omega
 A = lambda t: A0 * np.cos(np.pi/2 * (1-t/tau))**2 * (t < tau) + A0 * (t >= tau)
 hb = lambda phi, lamb, t: A(t)*np.sin(2*phi)**2*np.cos(2*lamb + w0*t)
 
 
 HB = hb(Phi, Lamb, T)
-min = np.min(HB)
-max = np.max(HB)
 
 # Plotting
 plt.rcParams.update({'font.size': 30})
@@ -30,7 +29,7 @@ y = np.rad2deg(phi)
 for i in range(5):
     ax = fig.add_subplot(1, 5, i+1, projection=ccrs.Orthographic(0, 90))
     ax.set_global()
-    filled_c = ax.contourf(x, y, HB[:, :, i], transform=ccrs.PlateCarree(), cmap = "icefire", vmin = min, vmax = max)
+    filled_c = ax.contourf(x, y, HB[:, :, i], transform=ccrs.PlateCarree(), cmap = "icefire")
     ax.contour(x, y, HB[:, :, i], levels=filled_c.levels, colors='black', transform=ccrs.PlateCarree())
     ax.set_title(f't = {t[i]:.1f} days')
 
