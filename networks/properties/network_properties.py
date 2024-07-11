@@ -6,7 +6,7 @@ import scipy
 from plotting import *
 
 #%% CENTRALITY
-def calc_centrality(am, lon, lat, min_dist=0, max_dist=np.inf):
+def calc_centrality(am, nlat, nlon, min_dist=0, max_dist=np.inf):
     # discard edges shorter than min_dist / longer than max_dist
     if min_dist != 0 or max_dist != np.inf:
         dist_matrix = calc_distance_matrix(lat, lat, lon, lon)
@@ -17,13 +17,13 @@ def calc_centrality(am, lon, lat, min_dist=0, max_dist=np.inf):
     out_centrality = np.sum(am, 0) / am.shape[0]
     in_centrality = np.sum(am, 1) / am.shape[0]
 
-    out_centrality_matrix = out_centrality.reshape(-1, (lon == 0).sum())
-    in_centrality_matrix = in_centrality.reshape(-1, (lon == 0).sum())
+    out_centrality_matrix = out_centrality.reshape(nlat, nlon)
+    in_centrality_matrix = in_centrality.reshape(nlat, nlon)
 
     return in_centrality_matrix, out_centrality_matrix
 
 #%% AVERAGE CONNECTIONS
-def calc_average_connections(am, lon, lat, min_dist=0, max_dist=np.inf):
+def calc_average_connections(am, nlat, nlon, min_dist=0, max_dist=np.inf):
     # discard edges shorter than min_dist / longer than max_dist
     if min_dist != 0 or max_dist != np.inf:
         dist_matrix = calc_distance_matrix(lat, lat, lon, lon)
@@ -34,55 +34,55 @@ def calc_average_connections(am, lon, lat, min_dist=0, max_dist=np.inf):
     out_centrality = np.mean(am, 0)
     in_centrality = np.mean(am, 1)
 
-    out_centrality_matrix = out_centrality.reshape(-1, (lon == 0).sum())
-    in_centrality_matrix = in_centrality.reshape(-1, (lon == 0).sum())
+    out_centrality_matrix = out_centrality.reshape(nlat, nlon)
+    in_centrality_matrix = in_centrality.reshape(nlat, nlon)
 
     return in_centrality_matrix, out_centrality_matrix
 
 #%% LOCAL CLUSTERING
-def calc_clustering(am, lon, lat):
+def calc_clustering(am, nlat, nlon):
 
     g = gt.Graph(scipy.sparse.lil_matrix(am))
     clust = gt.local_clustering(g)
-    clust_matrix = clust.get_array().reshape(-1, (lon == 0).sum())
+    clust_matrix = clust.get_array().reshape(nlat, nlon)
 
     return clust_matrix
 
 #%% CLOSENESS CENTRALITY
-def calc_closeness(am, lon, lat):
+def calc_closeness(am, nlat, nlon):
 
     g = gt.Graph(scipy.sparse.lil_matrix(am))
     close = gt.closeness(g)
-    close_matrix = close.get_array().reshape(-1, (lon == 0).sum())
+    close_matrix = close.get_array().reshape(nlat, nlon)
 
     return close_matrix
 
 #%% BETWEENESS CENTRALITY
-def calc_betweeness(am, lon, lat):
+def calc_betweeness(am, nlat, nlon):
 
     g = gt.Graph(scipy.sparse.lil_matrix(am))
     between = gt.closeness(g)
-    between_matrix = between.get_array().reshape(-1, (lon == 0).sum())
+    between_matrix = between.get_array().reshape(nlat, nlon)
 
     return between_matrix
 
 #%% EIGENVECTOR CENTRALITY
-def calc_eigenvector(am, lon, lat):
+def calc_eigenvector(am, nlat, nlon):
     g = gt.Graph(scipy.sparse.lil_matrix(am))
     _, eigen = gt.eigenvector(g)
-    eigen_matrix = eigen.get_array().reshape(-1, (lon == 0).sum())
+    eigen_matrix = eigen.get_array().reshape(nlat, nlon)
 
     return eigen_matrix
 
 
 # %% COMMUNITY DETECTION
-def calc_communities(am, lon, lat):
+def calc_communities(am, nlat, nlon):
     g = gt.Graph(scipy.sparse.lil_matrix(am))
     state = gt.minimize_blockmodel_dl(g)
     com = state.get_blocks()
     del state
     print(np.unique(com))
-    com_matrix = com.get_array().reshape(-1, (lon == 0).sum())
+    com_matrix = com.get_array().reshape(nlat, nlon)
 
     return com_matrix
 

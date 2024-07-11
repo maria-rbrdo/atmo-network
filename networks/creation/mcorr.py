@@ -9,27 +9,26 @@ Correlations can be found at zero lag (lag = False) or at time lag (lag = True).
 output directory specified.
 ------------------------------------------------------------------------------------------------------------------------
 Usage:
-    dep_matrix.py <files> <lmax> [--lmin=<lmin>] [--segments=<segments>]
+    dep_matrix.py <files> <lmax> [--lmin=<lmin>] [--segments=<segments>] [--dsize=<dsize>]
 
 Options:
-    --output=<dir>  Output directory [default: ./data/euler/networks]
+    --lmin=<lmin>     Minimum lag [default: 0]
     --segments=<seg>  Segments in which to break time series [default: 1]
-    --lag=<lag>  Maximum lag considered [default: 0]
+    --dsize=<dsize>   Down-sampling factor [default: 4]
 ------------------------------------------------------------------------------------------------------------------------
 Notes:
 - Available fields: ('h', 'd', 'q', 'z')
 ------------------------------------------------------------------------------------------------------------------------
 """
-from pyexpat import model
-
+import os
+import h5py
 import numpy as np
 import pandas as pd
-import h5py
-import os
+import skimage as ski
 from docopt import docopt
 from alive_progress import alive_bar
 
-#%% PCC and MI
+#%%
 def PCC(data, max_lag, min_lag=0):
     """
         This function finds the Pearson correlation matrix from data. The
@@ -53,17 +52,16 @@ def PCC(data, max_lag, min_lag=0):
         """
 
     if max_lag == 0:
-        return np.corrcoef(data)
+        return np.corrcoef(data), np.zeros(shape=(data.shape[0], data.shape[0]))
 
     elif type(max_lag) is int and type(min_lag) is int and max_lag > 0 and min_lag >= 0:
-        with (alive_bar(max_lag-min_lag, force_tty=True) as bar):
+        with alive_bar(max_lag-min_lag-1, force_tty=True) as bar:
 
             lm = np.zeros(shape=(data.shape[0], data.shape[0]))  # lag matrix
             cm = np.zeros(shape=(data.shape[0], data.shape[0]))  # correlation matrix (NO ZERO LAG)
-            bar()  # update bar
 
             # Positive lags — from j to i:
-            for lag in range(min_lag + 1, max_lag):
+            for lag in range(min_lag+1, max_lag):
 
                 data_i = data[:, lag:]  # series i -> moving forwards
                 data_j = data[:, :-lag]  # series j -> moving backwards
@@ -94,10 +92,8 @@ def PCC(data, max_lag, min_lag=0):
 
 
 #%%
-def main(fpath, lmax, lmin=0, segments=1):
+def main(fpath, lmax, lmin=0, segments=1, dsize=4):
     """
-        This function runs the script.
-
         ==========================================================================================
         Parameters :
         ------------------------------------------------------------------------------------------
@@ -107,8 +103,9 @@ def main(fpath, lmax, lmin=0, segments=1):
         lmax : int [days]               Maximum lag considered.
         lmin : int, optional [days]     Minimum lag considered [default: 0].
         segments: int, optional [-]     Segments in which to break time series [default: 1].
+        dsize: int, optional [-]        Down-sampling factor [default: 4].
         ==========================================================================================
-        """
+    """
 
     # ------------------------------------------------------------------------------------------------------------------
     # Prepare directory:
@@ -117,8 +114,9 @@ def main(fpath, lmax, lmin=0, segments=1):
     print('Preparing directory...')
 
     # obtain data from fpath
-    fld = os.path.basename(fpath).split("_")[0]
-    opath = os.path.dirname(fpath) + f'/CM_{model}_{fld}_s{segments}_l{lmin}to{lmax}.h5'
+    info = os.path.basename(fpath).split("_")
+    fld, tstart, tend = info[0], info[1], info[2]
+    opath = os.path.dirname(fpath) + f'/CM_{fld}_s{segments}_l{lmin}to{lmax}_{info[1]}_{info[2]}.h5'
 
     # delete files from previous runs
     try:
@@ -137,22 +135,33 @@ def main(fpath, lmax, lmin=0, segments=1):
 
         print("Loading data...")
 
+        # latitude and longitude
         lat = f['latitude'][:]
         lon = f['longitude'][:]
+        # reduced latitude and longitude
+        rlat = ski.measure.block_reduce(lat, block_size=dsize, func=np.mean)
+        rlon = ski.measure.block_reduce(lon, block_size=dsize, func=np.mean)
+        # delete unnecessary arrays
+        del lat, lon
+
+        # time
         t = f['time'][:]
+        # time-step
+        dt = t[1] - t[0]
 
-        nlat, nlon, nt = len(lat), len(lon), len(t)
+        # number of points
+        nlat, nlon, nt = len(rlat), len(rlon), len(t)
 
+        # other
         diter = int(nt / segments)  # iterations/slice
-        dt = t[1] - t[0]  # time-step
         lmax = int(lmax/dt)  # max lag in iter
         lmin = int(lmin/dt)  # min lag in iter
 
+        print(f"* time segments cover: {diter*dt} days from {tstart} to {tend}")
+
         with h5py.File(opath, mode='a') as store:
-            mlat = np.tile(lat, nlon)  # mesh latitude
-            mlon = np.repeat(lon, nlat)  # mesh longitude
-            store.create_dataset("latitude", data=mlat)
-            store.create_dataset("longitude", data=mlon)
+            store.create_dataset("latitude", data=rlat)
+            store.create_dataset("longitude", data=rlon)
 
         # Calculating correlation matrix ...............................................................................
 
@@ -160,20 +169,34 @@ def main(fpath, lmax, lmin=0, segments=1):
 
         for i in range(segments):
 
-            cdata = f["data"][:, :, i*diter:(i+1)*diter].reshape(-1, nt)
-            mcorr, mlag = PCC(cdata, max_lag=lmax, min_lag=lmin)
+            print(f"* segment: {i+1}/{segments}")
+
+            # find matrix
+            data = f["data"][:, :, i*diter:(i+1)*diter]
+
+            # reduce matrix
+            rdata = ski.measure.block_reduce(data, block_size=(dsize, dsize, 1), func=np.mean)
+            del data
+
+            # squeeze matrix
+            rsdata = rdata.reshape(-1, diter)
+
+            # calculate adjacency matrix
+            mcorr, mlag = PCC(rsdata, max_lag=lmax, min_lag=lmin)
             mlag = mlag * dt  # from steps to hours
 
-            # save matrix
-            tstart = int(round(t[i * diter], 3) * 1000)
-            tend = int(round(t[(i + 1)*diter-1], 3) * 1000)
+            # save adjacency matrix
+            tstart = t[i * diter]
+            tend = t[(i + 1)*diter-1]
             key = "t_" + str(tstart) + "_" + str(tend) + "_" + str(i)
-
             with h5py.File(opath, mode='a') as store:
                 store.create_dataset(key, data=mcorr)
                 store.create_dataset(key+"_lags", data=mlag)
 
 #%%
-if __name__ == "__main__":
-    args = docopt(__doc__)
-    main(fpath=args['<files>'], lmax=int(args['<lmax>']), lmin=int(args['--lmin']), segments=int(args['--segments']))
+#if __name__ == "__main__":
+#    args = docopt(__doc__)
+#    main(fpath=args['<files>'], lmax=int(args['<lmax>']), lmin=int(args['--lmin']), segments=int(args['--segments']),
+#         dsize=args['--dsize'])
+
+main("../../../dataloc/pv50-nu4-urlx.c0sat600.T170/netdata/q_1000_2000", lmax=7, segments=40, dsize=4)

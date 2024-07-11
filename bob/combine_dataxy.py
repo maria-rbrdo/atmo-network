@@ -23,10 +23,10 @@ from alive_progress import alive_bar
 
 fld = 'q'           # Field to visualize
 it_start = 1000     # First iteration to plot
-it_end = 1500       # Last iteration to plot
-res = 'T21'         # Resolution ('T2730', 'T1365', 'T682', 'T341', 'T170', 'T85', 'T42')
+it_end = 2000       # Last iteration to plot
+res = 'T170'        # Resolution ('T2730', 'T1365', 'T682', 'T341', 'T170', 'T85', 'T42')
 cstr = '0'          # Frequency parameter for job identification
-tsat = '600'        # Amplitude parameter for job identification
+tsat = '100'        # Amplitude parameter for job identification
 
 job = 'pv50-nu4-urlx' + '.c' + cstr + 'sat' + tsat + '.' + res    # Job name
 
@@ -54,7 +54,6 @@ elif res == 'T21':
 nlat = nlon // 2
 
 # Host .................................................................................................................
-
 if host == "localhost":
     folder = os.path.expanduser("../../dataloc/" + job + "/netdata/")
     file = os.path.expanduser("../../dataloc/" + job + "/netdata/" + f"{fld}_{it_start}_{it_end}")
@@ -69,6 +68,12 @@ elif host == "remotehost":
 if not os.path.exists(folder):
     os.mkdir(folder)
 
+try:
+    os.remove(file)
+    print(f"Previous file '{file}' deleted successfully.")
+except:
+    pass
+
 # Latitude and longitude ...............................................................................................
 
 # Create array of longitudes for plotting
@@ -82,19 +87,19 @@ ys = np.concatenate([lats, -np.flip(lats)])
 # Get and store data ...................................................................................................
 
 # Plot contours
-qxy = np.empty((nlat, nlon, it_start-it_end))
+qxy = np.empty((nlat//2, nlon, it_end-it_start))
 with alive_bar(it_end-it_start, force_tty=True) as bar:
     for it in np.arange(it_start, it_end, 1, dtype=int):
         # Get data
         tstr = f"{it:05}"  # Label of the file at that iteration
-        qxy[:, :, it] = get_dataxy(nlon, tstr, job, fld, host=host, swend=False)
+        qxy[:, :, it-it_start] = get_dataxy(nlon, tstr, job, fld, host=host, swend=False)[:nlat//2,:]
         # Update bar
         bar()
 
 with h5py.File(file, mode='a') as store:
     store.create_dataset("data", data=qxy)
     store.create_dataset("longitude", data=xs)
-    store.create_dataset("latitude", data=ys)
+    store.create_dataset("latitude", data=ys[:nlat//2])
     store.create_dataset("time", data=np.arange(it_start, it_end, 1))
 
 # Other ................................................................................................................

@@ -8,42 +8,34 @@ import cartopy.crs as ccrs
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-def plot_matrix(matrix, measure, lon, lat, times, savename, dpi=200, my_cmap=None, my_center=None):
-    # settings
-    plt.rcParams.update({'font.size': 25})
+def plot_matrix(ax, matrix, lat, lon, my_cmap=None, min=None, max=None, levels=25, H=np.NaN):
+    # define topography
+    if H is not np.NaN:
+        A0 = 0.15 * H
+        hb = lambda lon, lat: A0 * np.sin(2 * lat) ** 2 * np.cos(2 * lon)
 
     # select colormap depending on whether all values have the same sign or not
     if my_cmap is None:
         if np.all(matrix >= 0):
             my_cmap = sns.cm.rocket
         elif np.all(matrix <= 0):
-            my_cmap = sns.cm.mako_r
+            my_cmap = sns.cm.mako
+            matrix = abs(matrix)
         else:
-            my_cmap = sns.cm.icefire
+            my_cmap = sns.color_palette("icefire", as_cmap=True)
     # make figure
-    x = np.rad2deg(np.flip(lon.T, 0))
-    y = np.rad2deg(np.flip(lat.T, 0))
-    z = np.flip(matrix.T, 0)
+    x, y, z = lon, lat, matrix
 
-    x = np.hstack((x, 360*np.ones((len(x[:, 0]), 1))))
-    y = np.hstack((y, y[:, 0].reshape(-1, 1)))
-    z = np.hstack((z, z[:, 0].reshape(-1, 1)))
+    x = np.concatenate((np.atleast_1d(0), x, np.atleast_1d(360)))
+    z = np.concatenate((np.atleast_2d(z[:, 0]).T, z, np.atleast_2d(z[:, -1]).T), axis=1)
 
-    fig = plt.figure(figsize=(12, 7))
-    ax = fig.add_subplot(1, 1, 1, projection=ccrs.EckertIV(central_longitude=180))
-    ax.set_global()
-    filled_c = ax.contourf(x, y, z, transform=ccrs.PlateCarree(), cmap=my_cmap)
-    ax.contour(x, y, z, levels=filled_c.levels, colors='black', transform=ccrs.PlateCarree())
-    fig.colorbar(filled_c, use_gridspec=False, location="bottom", aspect=50, label=f"{measure}", orientation='horizontal', pad=0.05)
+    ax.contourf(x, y, z, levels, transform=ccrs.PlateCarree(), cmap=my_cmap, vmin=min, vmax=max)
 
-    if len(times) == 3:
-        fig.suptitle('t = {:.3f} - {:.3f} hrs'.format(times[0] / 1000, times[1] / 1000))
-    else:
-        fig.suptitle('t = {:.3f} hrs'.format(times[0] / 1000, times[1] / 1000))
+    if H is not np.NaN:
+        X, Y = np.meshgrid(np.deg2rad(x), np.deg2rad(y))
+        HB = hb(X, Y)
+        ax.contour(x, y, HB, colors='white', linewidths=3, transform=ccrs.PlateCarree())
 
-    # save figure
-    fig.savefig(savename, dpi=dpi, bbox_inches='tight')
-    plt.close()
 
 def plot_line(df, savename, dpi=200):
 
@@ -66,7 +58,7 @@ def plot_hist(df, savename, dpi=200, n_bins=50):
 
     plt.rcParams.update({'font.size': 25})
 
-    fig, ax = plt.subplots(figsize=(20, 7))
+    fig, ax = plt.subplots(figsize=(20, 20))
 
     sns.histplot(df, ax=ax, x=df.columns[1], hue=df.columns[0], element="step",
                  palette=sns.color_palette(), bins=n_bins)
@@ -82,7 +74,7 @@ def plot_hist_line(df, savename, dpi=200, n_bins=50):
 
     plt.rcParams.update({'font.size': 25})
 
-    fig, ax = plt.subplots(figsize=(20, 7))
+    fig, ax = plt.subplots(figsize=(20, 20))
 
     dff = pd.DataFrame(columns=[df.columns[0], "counts", "bin_centers"])
 
@@ -110,7 +102,7 @@ def plot_dist(df, savename, dpi=200, n_bins=50):
 
     plt.rcParams.update({'font.size': 25})
 
-    fig, ax = plt.subplots(figsize=(20, 7))
+    fig, ax = plt.subplots(figsize=(20, 20))
 
     dff = pd.DataFrame(columns=[df.columns[0], "counts", "bin_centers"])
 

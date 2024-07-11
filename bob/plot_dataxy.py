@@ -15,6 +15,7 @@ from get_dataxy import get_dataxy
 
 import os
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import seaborn as sns
@@ -24,18 +25,19 @@ from alive_progress import alive_bar
 
 fld = 'q'           # Field to visualize
 it_start = 1000     # First iteration to plot
-it_end = 1500       # Last iteration to plot
-res = 'T21'         # Resolution ('T2730', 'T1365', 'T682', 'T341', 'T170', 'T85', 'T42')
+it_end = 2000       # Last iteration to plot
+res = 'T170'        # Resolution ('T2730', 'T1365', 'T682', 'T341', 'T170', 'T85', 'T42', 'T21')
 cstr = '0'          # Frequency parameter for job identification
-tsat = '600'        # Amplitude parameter for job identification
-levels = 10          # Levels graph
-lmin = -1.2         # Min level
-lmax = 2.4          # Max level
-ptype = "individual"      # Plot type: grid plot or individual plots
+tsat = '200'       # Amplitude parameter for job identification
+levels = 25         # Levels graph
+lmin = 0            # Min level
+lmax = 2.5          # Max level
+ptype = "individual"      # Plot type: grid or individual plots
+prow = 5            # Plots per row
 
 job = 'pv50-nu4-urlx' + '.c' + cstr + 'sat' + tsat + '.' + res    # Job name
 
-host = "localhost"   # localhost or remotehost
+host = "remotehost"   # localhost or remotehost
 
 # Resolution ...........................................................................................................
 
@@ -64,7 +66,7 @@ if host == "localhost":
     folder = os.path.expanduser("../../dataloc/" + job + "/imgs/")
     tmp = np.loadtxt(f'../../dataloc/grids/GRID.{res}', max_rows=(nlat // 2))
 elif host == "remotehost":
-    folder = os.path.abspath("/home/reboredoprad/bob/dataloc/bb/swvac/" + job + "/imgs")
+    folder = os.path.abspath("/home/reboredoprad/bob/dataloc/bb/swvac/" + job + "/imgs/")
     tmp = np.loadtxt(f'../../bob/swbob-vac/grids/GRID.{res}', max_rows=(nlat // 2))
 
 # Create folder to save files ..........................................................................................
@@ -91,9 +93,11 @@ xs = np.concatenate((xs, np.atleast_1d(360)))
 if ptype == "individual":
     plt.rcParams.update({'font.size': 30})
     fig = plt.figure(figsize=(40, 30))
-if ptype == "grid":
+elif ptype == "grid":
     plt.rcParams.update({'font.size': 50})
-    fig = plt.figure(figsize=(40, 50))
+    fig = plt.figure(figsize=(30, 50))
+    norm = mpl.colors.Normalize(vmin=lmin, vmax=lmax)
+    sm = plt.cm.ScalarMappable(cmap=sns.color_palette("Spectral_r", as_cmap=True), norm=norm)
 
 # Plot contours
 with alive_bar(it_end-it_start, force_tty=True) as bar:
@@ -101,17 +105,19 @@ with alive_bar(it_end-it_start, force_tty=True) as bar:
         # Set projection
         if ptype == "individual":
             ax = fig.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
-        if ptype == "grid":
-            ax = fig.add_subplot((it_end-it_start)//4, 4, (it - it_start + 1), projection=ccrs.Orthographic(0, 90))
+        elif ptype == "grid":
+            ax = fig.add_subplot((it_end-it_start)//prow, prow, (it - it_start + 1), projection=ccrs.Orthographic(0, 90))
         ax.set_global()
 
         # Get data
         tstr = f"{it:05}"  # Label of the file at that iteration
         qxy = get_dataxy(nlon, tstr, job, fld, host=host, swend=False)
         qxy = np.concatenate([qxy, np.atleast_2d(qxy[:, 0]).T], axis=1)
+        #print(f"Iteration {it}: {np.max(qxy)}, {np.min(qxy)}")
 
         # Plot
-        filled_c = ax.contourf(xs, ys, qxy, levels, transform=ccrs.PlateCarree(), cmap=sns.color_palette("Spectral_r", as_cmap=True), vmin=0)
+        filled_c = ax.contourf(xs, ys, qxy, levels, transform=ccrs.PlateCarree(),
+                               cmap=sns.color_palette("Spectral_r", as_cmap=True), vmin=lmin, vmax=lmax)
         # ax.contour(xs, ys, qxy, 20, transform=ccrs.PlateCarree(), colors='black', linestyles="--")
 
         if ptype == "individual":
@@ -123,9 +129,10 @@ with alive_bar(it_end-it_start, force_tty=True) as bar:
         bar()
 
 if ptype == "grid":
-    cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
-    fig.colorbar(filled_c, cax=cbar_ax, orientation='vertical')
-    fig.savefig(f"{folder}/img{it_start}_{it_end}", dpi=200, bbox_inches='tight')
+    cbar_ax = fig.add_axes([0.93, 0.15, 0.02, 0.7])
+    fig.colorbar(sm, cax=cbar_ax, orientation='vertical')
+    fig.subplots_adjust(wspace=0.1, hspace=0.1)
+    fig.savefig(f"{folder}/grid{it_start}_{it_end}", dpi=200, bbox_inches='tight')
     fig.clear()
 
 # Other ................................................................................................................
