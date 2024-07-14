@@ -18,18 +18,20 @@ Notes:
 
 import os
 import h5py
+
 import numpy as np
-from alive_progress import alive_bar
-from docopt import docopt
 import matplotlib as mpl
-import matplotlib.pyplot as plt
+from docopt import docopt
 import cartopy.crs as ccrs
-import network_properties as net_prop
-from network_properties import *
-from plotting import *
+import matplotlib.pyplot as plt
+from alive_progress import alive_bar
+
+import netprop
+from netprop import *
+from plot import *
 
 dpi = 200
-def main(fname, opath, measure, tau=0, prob_distrib=False, ptype="individual", prow=5,
+def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", prow=5,
          lmin=None, lmax=None):
     """
         This function runs the script.
@@ -43,7 +45,7 @@ def main(fname, opath, measure, tau=0, prob_distrib=False, ptype="individual", p
         opath   : string                Path to the output directory.
         measure : string                Network measure to plot.
         tau : int, optional             Threshold to apply [default: 0].
-        prob_distrib: bool, optional    If true plots probability distribution [default: False].
+        extra_plots: bool, optional     If true plots probability distribution and scatter plot [default: False].
         ptype: str, optional            Plot type [default: individual].
         prow: int, optional             Plots per row if grid plot [default: 5].
         ==========================================================================================
@@ -72,16 +74,12 @@ def main(fname, opath, measure, tau=0, prob_distrib=False, ptype="individual", p
         keys_lags = {k for k in f.keys() if k.endswith("_lags")}
         keys_data = set(f.keys()) - {"longitude", "latitude"} - keys_lags
 
-        if prob_distrib is True:
-            df = pd.DataFrame(columns=["t", "vals"])
-
         # Initialise plot ..............................................................................................
         plt.rcParams.update({'font.size': 50})
         if ptype == "individual":
             figsize = (20, 20)
         elif ptype == "grid":
-            figsize = (30, 50)
-
+            figsize = (30, 25)
 
         if measure == "centrality":
             fig_in = plt.figure(figsize=figsize)
@@ -107,7 +105,33 @@ def main(fname, opath, measure, tau=0, prob_distrib=False, ptype="individual", p
         else:
             fig = plt.figure(figsize=figsize)
             norm = mpl.colors.Normalize(vmin=0, vmax=lmax)
-            sm = plt.cm.ScalarMappable(cmap=sns.color_palette("icefire", as_cmap=True), norm=norm)
+            sm = plt.cm.ScalarMappable(cmap=sns.cm.rocket, norm=norm)
+
+        if extra_plots:
+            fig_distrib = plt.figure(figsize=figsize)
+            fig_scatter = plt.figure(figsize=figsize)
+
+        # Set axis .............................................................................................
+
+        if ptype == "individual":
+            if extra_plots:
+                ax_distrib = fig_distrib.add_subplot(1, 1, 1)
+                ax_scatter = fig_scatter.add_subplot(1, 1, 1)
+            if measure == "centrality":
+                ax_in = fig_in.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
+                ax_out = fig_out.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
+                ax_diff = fig_diff.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
+                ax_in.set_global()
+                ax_out.set_global()
+                ax_diff.set_global()
+            elif measure == "average_connections":
+                ax_in = fig_in.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
+                ax_out = fig_out.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
+                ax_in.set_global()
+                ax_out.set_global()
+            else:
+                ax = fig.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
+                ax.set_global()
 
         # Iterate ......................................................................................................
 
@@ -117,23 +141,15 @@ def main(fname, opath, measure, tau=0, prob_distrib=False, ptype="individual", p
             # for k in keys_lags:
 
                 # Set axis .............................................................................................
-                if ptype == "individual":
-                    if measure == "centrality":
-                        ax_in = fig_in.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
-                        ax_out = fig_out.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
-                        ax_diff = fig_diff.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
-                        ax_in.set_global()
-                        ax_out.set_global()
-                        ax_diff.set_global()
-                    elif measure == "average_connections":
-                        ax_in = fig_in.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
-                        ax_out = fig_out.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
-                        ax_in.set_global()
-                        ax_out.set_global()
-                    else:
-                        ax = fig.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
-                        ax.set_global()
-                elif ptype == "grid":
+                if ptype == "grid":
+                    if extra_plots:
+                        ax_distrib = fig_distrib.add_subplot(len(keys_data) // prow, prow, (it + 1))
+                        ax_distrib.set_yticklabels([])
+                        ax_distrib.set_xticklabels([])
+
+                        ax_scatter = fig_scatter.add_subplot(len(keys_data) // prow, prow, (it + 1))
+                        ax_scatter.set_yticklabels([])
+                        ax_scatter.set_xticklabels([])
                     if measure == "centrality":
                         ax_in = fig_in.add_subplot(len(keys_data) // prow, prow, (it + 1),
                                                    projection=ccrs.Orthographic(0, 90))
@@ -170,29 +186,48 @@ def main(fname, opath, measure, tau=0, prob_distrib=False, ptype="individual", p
                     savename_in = opath + oname + 'write_{:06}_in.png'.format(times[-1])
                     savename_out = opath + oname + 'write_{:06}_out.png'.format(times[-1])
                     savename_diff = opath + oname + 'write_{:06}_diff.png'.format(times[-1])
+                    savename_distrib = opath + oname + 'write_{:06}_distrib.png'.format(times[-1])
+                    savename_scatter = opath + oname + 'write_{:06}_scatter.png'.format(times[-1])
 
                 # Measure and plot .....................................................................................
 
                 if measure == "centrality":
-                    net, net_out = calc_centrality(am, len(lat), len(lon), min_dist=0, max_dist=np.inf)
+                    glon, glat = np.meshgrid(lon, lat)
+                    net, net_out = calc_centrality(am, len(lat), len(lon), min_dist=0, max_dist=np.inf, lat=glat, lon=glon)
                     # generate plot
-                    plot_matrix(ax_in, net, lat, lon, min=lmin, max=lmax)
-                    plot_matrix(ax_out, -net_out, lat, lon, min=lmin, max=lmax)
-                    plot_matrix(ax_diff, net-net_out, lat, lon, min=lmin, max=lmax)
+                    plot_matrix(ax_in, net, lat, lon, min=0, max=lmax, levels=25)
+                    plot_matrix(ax_out, -net_out, lat, lon, min=0, max=lmax, levels=25)
+                    plot_matrix(ax_diff, net-net_out, lat, lon, min=lmin, max=lmax, levels=25)
+
+                    if extra_plots is True:
+                        plot_cumsum(ax_distrib, [net, net_out], ["in strength", "out strength"], lmax,
+                                    ptype=ptype)
+                        plot_scatter(ax_scatter, [net, net_out], ["in strength", "out strength"], lmax,
+                                     ptype=ptype)
+
                 elif measure == "average_connections":
                     net, net_out = calc_average_connections(am, len(lat), len(lon), min_dist=0, max_dist=np.inf)
                     # generate plot
-                    plot_matrix(ax_in, net, lon, lat, min=lmin, max=lmax)
-                    plot_matrix(ax_out, -net_out, lon, lat, min=lmin, max=lmax)
+                    plot_matrix(ax_in, net, lon, lat, min=0, max=lmax)
+                    plot_matrix(ax_out, -net_out, lon, lat, min=0, max=lmax)
                 else:  # measures: centrality, clustering, closeness, betweeness, eigenvector
-                    function = getattr(net_prop, 'calc_' + measure)
+                    function = getattr(netprop, 'calc_' + measure)
                     net = function(am, len(lat), len(lon))
+                    print(np.max(net), np.min(net))
                     # generate plot
-                    plot_matrix(ax, net, lat, lon, min=lmin, max=lmax)
+                    plot_matrix(ax, net, lat, lon)
 
-                # Other ................................................................................................
+                # Save fig .............................................................................................
 
                 if ptype == "individual":
+                    if extra_plots:
+                        ax_distrib.legend()
+                        fig_distrib.savefig(savename_distrib, dpi=200, bbox_inches='tight')
+                        fig_distrib.clear()
+
+                        fig_scatter.savefig(savename_scatter, dpi=200, bbox_inches='tight')
+                        fig_distrib.clear()
+
                     if measure == "centrality":
                         cbar_ax_in = fig_in.add_axes([0.93, 0.15, 0.02, 0.7])
                         cbar_ax_out = fig_out.add_axes([0.93, 0.15, 0.02, 0.7])
@@ -200,19 +235,19 @@ def main(fname, opath, measure, tau=0, prob_distrib=False, ptype="individual", p
 
                         cbar_in = fig_in.colorbar(sm_in, cax=cbar_ax_in, orientation='vertical', extend='both')
                         cbar_in.formatter.set_powerlimits((0, 0))
-                        fig_in.suptitle(f"{times[0]:04} days")
+                        fig_in.suptitle(f"in strength centrality")
                         fig_in.savefig(savename_in, dpi=200, bbox_inches='tight')
                         fig_in.clear()
 
                         cbar_out = fig_out.colorbar(sm_out, cax=cbar_ax_out, orientation='vertical', extend='both')
                         cbar_out.formatter.set_powerlimits((0, 0))
-                        fig_out.suptitle(f"{times[0]:04} days")
+                        fig_out.suptitle(f"out strength centrality")
                         fig_out.savefig(savename_out, dpi=200, bbox_inches='tight')
                         fig_out.clear()
 
                         cbar_diff = fig_diff.colorbar(sm_diff, cax=cbar_ax_diff, orientation='vertical', extend='both')
                         cbar_diff.formatter.set_powerlimits((0, 0))
-                        fig_diff.suptitle(f"{times[0]:04} days")
+                        fig_diff.suptitle(f"(in-out) strength centrality")
                         fig_diff.savefig(savename_diff, dpi=200, bbox_inches='tight')
                         fig_diff.clear()
 
@@ -221,33 +256,36 @@ def main(fname, opath, measure, tau=0, prob_distrib=False, ptype="individual", p
                         cbar_ax_out = fig_out.add_axes([0.93, 0.15, 0.02, 0.7])
 
                         fig_in.colorbar(sm_in, cax=cbar_ax_in, orientation='vertical', extend='both')
-                        fig_in.suptitle(f"{times[0]:04} days")
+                        fig_in.suptitle(f"average number of in-links")
                         fig_in.savefig(savename_in, dpi=200, bbox_inches='tight')
                         fig_in.clear()
 
                         fig_out.colorbar(sm_out, cax=cbar_ax_out, orientation='vertical', extend='both')
-                        fig_out.suptitle(f"{times[0]:04} days")
+                        fig_out.suptitle(f"average number of out-links")
                         fig_out.savefig(savename_out, dpi=200, bbox_inches='tight')
                         fig_out.clear()
                     else:
-                        cbar_ax = fig_in.add_axes([0.93, 0.15, 0.02, 0.7])
+                        cbar_ax = fig.add_axes([0.93, 0.15, 0.02, 0.7])
 
                         fig.colorbar(sm, cax=cbar_ax, orientation='vertical', extend='both')
-                        fig.suptitle(f"{times[0]:04} days")
-                        fig.savefig(savename_diff, dpi=200, bbox_inches='tight')
+                        fig.suptitle(f"{measure}")
+                        fig.savefig(savename, dpi=200, bbox_inches='tight')
                         fig.clear()
-
-                # Save data ............................................................................................
-                if prob_distrib is True:
-                    vals = net.reshape(-1)
-                    new_rows = pd.DataFrame({"time": [times[0]] * len(vals), "strength": vals})
-                    df = new_rows.copy() if df.empty else pd.concat([df, new_rows], ignore_index=True)
 
                 #%% Update bar
                 bar()
                 it += 1
 
+        # Save fig .....................................................................................................
+
         if ptype == "grid":
+            if extra_plots is True:
+                fig_distrib.subplots_adjust(wspace=0.1, hspace=0.1)
+                fig_distrib.savefig(opath + oname + "distrib", dpi=200, bbox_inches='tight')
+
+                fig_scatter.subplots_adjust(wspace=0.1, hspace=0.1)
+                fig_scatter.savefig(opath + oname + "scatter", dpi=200, bbox_inches='tight')
+
             if measure == "centrality":
                 cbar_ax_in = fig_in.add_axes([0.93, 0.15, 0.02, 0.7])
                 cbar_ax_out = fig_out.add_axes([0.93, 0.15, 0.02, 0.7])
@@ -257,19 +295,16 @@ def main(fname, opath, measure, tau=0, prob_distrib=False, ptype="individual", p
                 cbar_in.formatter.set_powerlimits((0, 0))
                 fig_in.subplots_adjust(wspace=0.1, hspace=0.1)
                 fig_in.savefig(opath + oname + "grid_in", dpi=200, bbox_inches='tight')
-                fig_in.clear()
 
                 cbar_out = fig_out.colorbar(sm_out, cax=cbar_ax_out, orientation='vertical')
                 cbar_out.formatter.set_powerlimits((0, 0))
                 fig_out.subplots_adjust(wspace=0.1, hspace=0.1)
                 fig_out.savefig(opath + oname + "grid_out", dpi=200, bbox_inches='tight')
-                fig_out.clear()
 
                 cbar_diff = fig_diff.colorbar(sm_diff, cax=cbar_ax_diff, orientation='vertical')
                 cbar_diff.formatter.set_powerlimits((0, 0))
                 fig_diff.subplots_adjust(wspace=0.1, hspace=0.1)
                 fig_diff.savefig(opath + oname + "grid_diff", dpi=200, bbox_inches='tight')
-                fig_diff.clear()
 
             elif measure == "average_connections":
                 cbar_ax_in = fig_in.add_axes([0.93, 0.15, 0.02, 0.7])
@@ -279,7 +314,6 @@ def main(fname, opath, measure, tau=0, prob_distrib=False, ptype="individual", p
                 cbar_in.formatter.set_powerlimits((0, 0))
                 fig_in.subplots_adjust(wspace=0.1, hspace=0.1)
                 fig_in.savefig(opath + oname + "grid_in", dpi=200, bbox_inches='tight')
-                fig_in.clear()
 
                 cbar_out = fig_out.colorbar(sm_out, cax=cbar_ax_out, orientation='vertical')
                 cbar_out.formatter.set_powerlimits((0, 0))
@@ -293,10 +327,6 @@ def main(fname, opath, measure, tau=0, prob_distrib=False, ptype="individual", p
                 cbar.formatter.set_powerlimits((0, 0))
                 fig.subplots_adjust(wspace=0.1, hspace=0.1)
                 fig.savefig(opath + oname + "grid", dpi=200, bbox_inches='tight')
-                fig.clear()
-
-        if prob_distrib is True:
-            plot_hist_line(df, opath + oname + "prob_distrib.png", n_bins=250)
 
 #if __name__ == "__main__":
 
@@ -306,10 +336,10 @@ def main(fname, opath, measure, tau=0, prob_distrib=False, ptype="individual", p
 #         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
 #         filename=args['<files>'], output=args['--output'])
 
-ss = [600]
-seg = 40
+ss = [100, 200, 400, 600, 800, 1000, 1200]
+seg = 20
 l = 7
 for s in ss:
     main(f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/CM_q_s{seg}_l0to{l}_1000_2000.h5",
-         f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/", "centrality", 0.9,
-         prob_distrib=False, ptype="grid", prow=5, lmin=-0.025, lmax=0.025)
+         f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/", "centrality", 0.5,
+         extra_plots=False, ptype="grid", prow=5, lmin=-0.25, lmax=0.25)

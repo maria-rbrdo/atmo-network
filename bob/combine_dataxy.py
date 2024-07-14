@@ -22,8 +22,8 @@ from alive_progress import alive_bar
 # Parameters for file and field selection ..............................................................................
 
 fld = 'q'           # Field to visualize
-it_start = 1000     # First iteration to plot
-it_end = 2000       # Last iteration to plot
+it_start = 1763     # First iteration to plot
+it_end = 1803       # Last iteration to plot
 res = 'T170'        # Resolution ('T2730', 'T1365', 'T682', 'T341', 'T170', 'T85', 'T42')
 cstr = '0'          # Frequency parameter for job identification
 tsat = '100'        # Amplitude parameter for job identification

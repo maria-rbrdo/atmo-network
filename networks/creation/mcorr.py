@@ -199,4 +199,6 @@ def main(fpath, lmax, lmin=0, segments=1, dsize=4):
 #    main(fpath=args['<files>'], lmax=int(args['<lmax>']), lmin=int(args['--lmin']), segments=int(args['--segments']),
 #         dsize=args['--dsize'])
 
-main("../../../dataloc/pv50-nu4-urlx.c0sat600.T170/netdata/q_1000_2000", lmax=7, segments=40, dsize=4)
+ss = [100, 200, 400, 600, 800, 1000, 1200]
+for s in ss:
+    main(f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/q_1000_2000", lmax=0, segments=40, dsize=4)

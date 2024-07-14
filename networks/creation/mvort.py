@@ -181,5 +181,7 @@ def main(qpath, hpath, dsize=4):
 #    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
 #         lag=int(args['--lag']), filename=args['<files>'], output=args['--output'])
 
-main("../../../dataloc/pv50-nu4-urlx.c0sat600.T170/netdata/q_1763_1803",
-     "../../../dataloc/pv50-nu4-urlx.c0sat600.T170/netdata/h_1763_1803")
+ss = [600]
+for s in ss:
+    main(f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/q_1763_1803",
+         f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/h_1763_1803")

@@ -28,12 +28,13 @@ it_start = 1000     # First iteration to plot
 it_end = 2000       # Last iteration to plot
 res = 'T170'        # Resolution ('T2730', 'T1365', 'T682', 'T341', 'T170', 'T85', 'T42', 'T21')
 cstr = '0'          # Frequency parameter for job identification
-tsat = '200'       # Amplitude parameter for job identification
-levels = 25         # Levels graph
-lmin = 0            # Min level
-lmax = 2.5          # Max level
+tsat = '600'        # Amplitude parameter for job identification
+levels = 500        # Levels graph
+lmin = None         # Min level
+lmax = None         # Max level
 ptype = "individual"      # Plot type: grid or individual plots
 prow = 5            # Plots per row
+mzav = True         # Subtract zonal average?
 
 job = 'pv50-nu4-urlx' + '.c' + cstr + 'sat' + tsat + '.' + res    # Job name
 
@@ -111,7 +112,8 @@ with alive_bar(it_end-it_start, force_tty=True) as bar:
 
         # Get data
         tstr = f"{it:05}"  # Label of the file at that iteration
-        qxy = get_dataxy(nlon, tstr, job, fld, host=host, swend=False)
+        #qxy = get_dataxy(nlon, tstr, job, fld, host=host, swend=False)
+        qxy = get_dataxy(nlon, tstr, job, "q", host=host, swend=False) * (get_dataxy(nlon, tstr, job, "h", host=host, swend=False)+10)
         qxy = np.concatenate([qxy, np.atleast_2d(qxy[:, 0]).T], axis=1)
         #print(f"Iteration {it}: {np.max(qxy)}, {np.min(qxy)}")
 

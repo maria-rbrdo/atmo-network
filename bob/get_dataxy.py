@@ -34,7 +34,7 @@ def get_dataxy(nlon, tstr, job, fld, host='remotehost', swend=False):
         datadir = os.path.expanduser("../../dataloc")
     elif host == "remotehost":
         datadir = os.path.abspath("/home/reboredoprad/bob/dataloc/bb/swvac")
-    filepath = os.path.join(datadir, job, f"{fld}.{tstr}")
+    filepath = os.path.join(datadir, job, f"bobdata/{fld}.{tstr}")
 
     # Open the file in binary read mode
     with open(filepath, 'rb') as f:
