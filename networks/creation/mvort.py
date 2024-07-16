@@ -36,10 +36,10 @@ def mixedterm(lat_i, lat_j, lon_i, lon_j):
         ------------------------------------------------------------------------------------------
         Name    : Type [units]          Description
         ------------------------------------------------------------------------------------------
-        lat_i : np.array [deg]          Latitude point i.
-        lat_j : np.array [deg]          Latitude point j.
-        lon_i : np.array [deg]          Longitude point i.
-        lon_j : np.array [deg]          Longitude point j.
+        lat_i : numpy.ndarray [deg]     Latitude point i.
+        lat_j : numpy.ndarray [deg]     Latitude point j.
+        lon_i : numpy.ndarray [deg]     Longitude point i.
+        lon_j : numpy.ndarray [deg]     Longitude point j.
         ==========================================================================================
     """
 

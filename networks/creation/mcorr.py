@@ -40,7 +40,7 @@ def PCC(data, max_lag, min_lag=0):
         ------------------------------------------------------------------------------------------
         Name    : Type              Description
         ------------------------------------------------------------------------------------------
-        data    : np.array          Array of data where each row is the timeseries of a node.
+        data    : numpy.ndarray     Array of data where each row is the timeseries of a node.
         max_lag : int               Maximum lag considered
         min_lag : int, optional     Minimum lag considered [default: 0].
         ==========================================================================================
@@ -201,4 +201,4 @@ def main(fpath, lmax, lmin=0, segments=1, dsize=4):
 
 ss = [100, 200, 400, 600, 800, 1000, 1200]
 for s in ss:
-    main(f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/q_1000_2000", lmax=0, segments=40, dsize=4)
+    main(f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/q_1000_2000", lmax=7, segments=40, dsize=4)

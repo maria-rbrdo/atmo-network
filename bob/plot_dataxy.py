@@ -30,14 +30,13 @@ res = 'T170'        # Resolution ('T2730', 'T1365', 'T682', 'T341', 'T170', 'T85
 cstr = '0'          # Frequency parameter for job identification
 tsat = '600'        # Amplitude parameter for job identification
 levels = 500        # Levels graph
-lmin = None         # Min level
+lmin = 0            # Min level
 lmax = None         # Max level
 ptype = "individual"      # Plot type: grid or individual plots
 prow = 5            # Plots per row
 mzav = True         # Subtract zonal average?
 
-job = 'pv50-nu4-urlx' + '.c' + cstr + 'sat' + tsat + '.' + res    # Job name
-
+job = 'pv50-nu4-urlx' + '.c' + cstr + 'sat' + tsat + '.' + res + '_topo1'    # Job name
 host = "remotehost"   # localhost or remotehost
 
 # Resolution ...........................................................................................................

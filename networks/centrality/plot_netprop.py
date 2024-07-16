@@ -79,7 +79,7 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
         if ptype == "individual":
             figsize = (20, 20)
         elif ptype == "grid":
-            figsize = (30, 25)
+            figsize = (30, 50)
 
         if measure == "centrality":
             fig_in = plt.figure(figsize=figsize)
@@ -196,8 +196,9 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                     net, net_out = calc_centrality(am, len(lat), len(lon), min_dist=0, max_dist=np.inf, lat=glat, lon=glon)
                     # generate plot
                     plot_matrix(ax_in, net, lat, lon, min=0, max=lmax, levels=25)
-                    plot_matrix(ax_out, -net_out, lat, lon, min=0, max=lmax, levels=25)
-                    plot_matrix(ax_diff, net-net_out, lat, lon, min=lmin, max=lmax, levels=25)
+                    if not np.all(np.round(net,10) == np.round(net_out,10)):
+                        plot_matrix(ax_out, -net_out, lat, lon, min=0, max=lmax, levels=25)
+                        plot_matrix(ax_diff, net-net_out, lat, lon, min=lmin, max=lmax, levels=25)
 
                     if extra_plots is True:
                         plot_cumsum(ax_distrib, [net, net_out], ["in strength", "out strength"], lmax,
@@ -213,7 +214,6 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                 else:  # measures: centrality, clustering, closeness, betweeness, eigenvector
                     function = getattr(netprop, 'calc_' + measure)
                     net = function(am, len(lat), len(lon))
-                    print(np.max(net), np.min(net))
                     # generate plot
                     plot_matrix(ax, net, lat, lon)
 
@@ -337,9 +337,9 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
 #         filename=args['<files>'], output=args['--output'])
 
 ss = [100, 200, 400, 600, 800, 1000, 1200]
-seg = 20
-l = 7
+seg = 40
+l = 0
 for s in ss:
     main(f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/CM_q_s{seg}_l0to{l}_1000_2000.h5",
-         f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/", "centrality", 0.5,
-         extra_plots=False, ptype="grid", prow=5, lmin=-0.25, lmax=0.25)
+         f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/", "eigenvector", 0.5,
+         extra_plots=False, ptype="grid", prow=5, lmin=0, lmax=0.05)
