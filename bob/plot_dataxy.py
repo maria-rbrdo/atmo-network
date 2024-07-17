@@ -24,20 +24,20 @@ from alive_progress import alive_bar
 # Parameters for file and field selection ..............................................................................
 
 fld = 'q'           # Field to visualize
-it_start = 1000     # First iteration to plot
-it_end = 2000       # Last iteration to plot
+it_start = 1763     # First iteration to plot
+it_end = 1803       # Last iteration to plot
 res = 'T170'        # Resolution ('T2730', 'T1365', 'T682', 'T341', 'T170', 'T85', 'T42', 'T21')
 cstr = '0'          # Frequency parameter for job identification
 tsat = '600'        # Amplitude parameter for job identification
-levels = 500        # Levels graph
-lmin = 0            # Min level
-lmax = None         # Max level
-ptype = "individual"      # Plot type: grid or individual plots
+levels = 25         # Levels graph
+lmin = -1.20        # Min level
+lmax = 1.20         # Max level
+ptype = "grid"      # Plot type: grid or individual plots
 prow = 5            # Plots per row
 mzav = True         # Subtract zonal average?
 
-job = 'pv50-nu4-urlx' + '.c' + cstr + 'sat' + tsat + '.' + res + '_topo1'    # Job name
-host = "remotehost"   # localhost or remotehost
+job = 'pv50-nu4-urlx' + '.c' + cstr + 'sat' + tsat + '.' + res    # Job name
+host = "localhost"   # localhost or remotehost
 
 # Resolution ...........................................................................................................
 
@@ -97,7 +97,7 @@ elif ptype == "grid":
     plt.rcParams.update({'font.size': 50})
     fig = plt.figure(figsize=(30, 50))
     norm = mpl.colors.Normalize(vmin=lmin, vmax=lmax)
-    sm = plt.cm.ScalarMappable(cmap=sns.color_palette("Spectral_r", as_cmap=True), norm=norm)
+    sm = plt.cm.ScalarMappable(cmap=sns.color_palette("icefire", as_cmap=True), norm=norm)
 
 # Plot contours
 with alive_bar(it_end-it_start, force_tty=True) as bar:
@@ -112,13 +112,19 @@ with alive_bar(it_end-it_start, force_tty=True) as bar:
         # Get data
         tstr = f"{it:05}"  # Label of the file at that iteration
         #qxy = get_dataxy(nlon, tstr, job, fld, host=host, swend=False)
-        qxy = get_dataxy(nlon, tstr, job, "q", host=host, swend=False) * (get_dataxy(nlon, tstr, job, "h", host=host, swend=False)+10)
+        qxy = get_dataxy(nlon, tstr, job, "q", host=host, swend=False) * (10 + get_dataxy(nlon, tstr, job, "h", host=host, swend=False))
         qxy = np.concatenate([qxy, np.atleast_2d(qxy[:, 0]).T], axis=1)
-        #print(f"Iteration {it}: {np.max(qxy)}, {np.min(qxy)}")
+
+        # Subtract zonal average
+        if mzav:
+            qxy = qxy - np.mean(qxy, axis=1, keepdims=True)
+
+        # Print min max
+        print(f"Iteration {it}: {np.max(qxy)}, {np.min(qxy)}")
 
         # Plot
         filled_c = ax.contourf(xs, ys, qxy, levels, transform=ccrs.PlateCarree(),
-                               cmap=sns.color_palette("Spectral_r", as_cmap=True), vmin=lmin, vmax=lmax)
+                               cmap=sns.color_palette("icefire", as_cmap=True), vmin=lmin, vmax=lmax)
         # ax.contour(xs, ys, qxy, 20, transform=ccrs.PlateCarree(), colors='black', linestyles="--")
 
         if ptype == "individual":

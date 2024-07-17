@@ -8,6 +8,11 @@ import cartopy.crs as ccrs
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Heat Map:
+# ----------------------------------------------------------------------------------------------------------------------
+
 def plot_matrix(ax, matrix, lat, lon, my_cmap=None, min=None, max=None, levels=25, H=None):
     # define topography
     if H is not None:
@@ -40,11 +45,15 @@ def plot_matrix(ax, matrix, lat, lon, my_cmap=None, min=None, max=None, levels=2
         HB = hb(X, Y)
         ax.contour(x, y, HB, colors='white', linewidths=3, transform=ccrs.PlateCarree())
 
-def plot_cumsum(ax, data_lst, names_lst, lmax, ptype):
+# ----------------------------------------------------------------------------------------------------------------------
+# Cumulative probability distribution:
+# ----------------------------------------------------------------------------------------------------------------------
+
+def plot_cumsum(ax, data_lst, names_lst, lmax, ptype, colors=[None,None]):
     for i in range(len(data_lst)):
         values, base = np.histogram(data_lst[i].reshape(-1), bins=5000)
         cumulative = np.cumsum(values)/len(data_lst[i].reshape(-1))
-        ax.plot(base[:-1], 1-cumulative, "-", linewidth=5, markersize=10, label=names_lst[i])
+        ax.plot(base[:-1], 1-cumulative, "-", linewidth=5, markersize=10, label=names_lst[i], color=colors[i])
 
     ax.set_ylim(0.01, 1)
 
@@ -59,6 +68,10 @@ def plot_cumsum(ax, data_lst, names_lst, lmax, ptype):
     else:
         ax.set_xlabel(r'strength')
         ax.set_ylabel(f'cumulative degree distribution')
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Scatter plot:
+# ----------------------------------------------------------------------------------------------------------------------
 
 def plot_scatter(ax, data_lst, names_lst, lmax, ptype):
     data1 = data_lst[0].reshape(-1)
@@ -77,6 +90,9 @@ def plot_scatter(ax, data_lst, names_lst, lmax, ptype):
         ax.set_xlabel(f'{names_lst[0]}')
         ax.set_ylabel(f'{names_lst[1]}')
 
+# ----------------------------------------------------------------------------------------------------------------------
+# Other:
+# ----------------------------------------------------------------------------------------------------------------------
 
 def plot_line(df, savename, dpi=200):
 

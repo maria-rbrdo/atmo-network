@@ -25,6 +25,8 @@ import skimage as ski
 from docopt import docopt
 from alive_progress import alive_bar
 
+from networks.plot.plot import plot_matrix
+
 #%%
 def mixedterm(lat_i, lat_j, lon_i, lon_j):
     """
@@ -87,7 +89,7 @@ def main(qpath, hpath, dsize=4):
     info_2 = os.path.basename(qpath).split("_")
     assert info_1[1] == info_2[1] and info_1[2] == info_2[2], "q and h files do not cover the same time-segment."
 
-    opath = os.path.dirname(qpath) + f'/VM_{info_1[1]}_{info_1[2]}.h5'
+    opath = os.path.dirname(qpath) + f'/VM_{info_1[1]}_{info_1[2]}_highres.h5'
     try:
         os.remove(opath)
         print(f"Previous file '{opath}' deleted successfully.")
@@ -150,7 +152,7 @@ def main(qpath, hpath, dsize=4):
 
                     # calculate vortex strength
                     gvort = rvort.reshape(-1)
-                    gamma_j = np.abs(gvort*R**2*np.cos(glat)*gdlon*gdlat)
+                    gamma_j = np.abs(gvort*R**2*np.cos(np.deg2rad(glat))*gdlon*gdlat)
                     gamma_i = np.atleast_2d(gamma_j).T
 
                     # calculate mixed term
@@ -184,4 +186,4 @@ def main(qpath, hpath, dsize=4):
 ss = [600]
 for s in ss:
     main(f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/q_1763_1803",
-         f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/h_1763_1803")
+         f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/h_1763_1803", dsize=2)

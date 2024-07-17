@@ -22,11 +22,11 @@ from alive_progress import alive_bar
 # Parameters for file and field selection ..............................................................................
 
 fld = 'q'           # Field to visualize
-it_start = 1000     # First iteration to plot
-it_end = 2000       # Last iteration to plot
+it_start = 1763     # First iteration to plot
+it_end = 1803       # Last iteration to plot
 res = 'T170'        # Resolution ('T2730', 'T1365', 'T682', 'T341', 'T170', 'T85', 'T42')
 cstr = '0'          # Frequency parameter for job identification
-tsat = '200'        # Amplitude parameter for job identification
+tsat = '600'        # Amplitude parameter for job identification
 
 job = 'pv50-nu4-urlx' + '.c' + cstr + 'sat' + tsat + '.' + res    # Job name
 
@@ -86,7 +86,6 @@ ys = np.concatenate([lats, -np.flip(lats)])
 
 # Get and store data ...................................................................................................
 
-# Plot contours
 qxy = np.empty((nlat//2, nlon, it_end-it_start))
 with alive_bar(it_end-it_start, force_tty=True) as bar:
     for it in np.arange(it_start, it_end, 1, dtype=int):
@@ -101,13 +100,3 @@ with h5py.File(file, mode='a') as store:
     store.create_dataset("longitude", data=xs)
     store.create_dataset("latitude", data=ys[:nlat//2])
     store.create_dataset("time", data=np.arange(it_start, it_end, 1))
-
-# Other ................................................................................................................
-
-# Center data at mid-longitude
-# qxy = np.roll(qxy, nlon // 2, axis=0)
-# xs = xs - xs[nlon // 2]
-# Substract height from mid-longitude from all longitudes
-#   qxy0 = qxy[0, :]
-#   for i in range(nlat):
-#       qxy[:, i] -= qxy0[i]

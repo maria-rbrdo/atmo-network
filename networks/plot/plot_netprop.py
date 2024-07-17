@@ -8,7 +8,7 @@ Usage:
     indiv_network.py <files> <measure> [--tau=<tau>] [--degree_distribution=<degree_distribution>]
 
 Options:
-    --tau=<tau>  Correlation threshold [default: 0.9]
+    --tau=<tau>  Correlation threshold [default: 0]
     --degree_distribution=<degree_distribution>  Plot the cumulative degree distribution [default: False]
 ------------------------------------------------------------------------------------------------------------------------
 Notes:
@@ -26,9 +26,9 @@ import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 from alive_progress import alive_bar
 
-import netprop
-from netprop import *
-from plot import *
+import networks.calculate.netprop as netprop
+from networks.calculate.netprop import *
+from networks.plot.plot import *
 
 dpi = 200
 def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", prow=5,
@@ -81,27 +81,27 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
         elif ptype == "grid":
             figsize = (30, 50)
 
-        if measure == "centrality":
+        if measure == "strength":
             fig_in = plt.figure(figsize=figsize)
             fig_out = plt.figure(figsize=figsize)
             fig_diff = plt.figure(figsize=figsize)
 
-            norm_in = mpl.colors.Normalize(vmin=0, vmax=lmax)
-            norm_out = mpl.colors.Normalize(vmin=0, vmax=np.abs(lmin))
+            norm_out = mpl.colors.Normalize(vmin=0, vmax=lmax)
+            norm_in = mpl.colors.Normalize(vmin=0, vmax=np.abs(lmin))
             norm_diff = mpl.colors.Normalize(vmin=lmin, vmax=lmax)
 
-            sm_in = plt.cm.ScalarMappable(cmap=sns.cm.rocket, norm=norm_in)
-            sm_out = plt.cm.ScalarMappable(cmap=sns.cm.mako, norm=norm_out)
+            sm_in = plt.cm.ScalarMappable(cmap=sns.cm.mako, norm=norm_in)
+            sm_out = plt.cm.ScalarMappable(cmap=sns.cm.rocket, norm=norm_out)
             sm_diff = plt.cm.ScalarMappable(cmap=sns.color_palette("icefire", as_cmap=True), norm=norm_diff)
         elif measure == "average_connections":
             fig_in = plt.figure(figsize=figsize)
             fig_out = plt.figure(figsize=figsize)
 
-            norm_in = mpl.colors.Normalize(vmin=0, vmax=lmax)
-            norm_out = mpl.colors.Normalize(vmin=lmin, vmax=0)
+            norm_out = mpl.colors.Normalize(vmin=0, vmax=lmax)
+            norm_in = mpl.colors.Normalize(vmin=0, vmax=np.abs(lmin))
 
-            sm_in = plt.cm.ScalarMappable(cmap=sns.cm.rocket, norm=norm_in)
-            sm_out = plt.cm.ScalarMappable(cmap=sns.cm.mako_r, norm=norm_out)
+            sm_out = plt.cm.ScalarMappable(cmap=sns.cm.rocket, norm=norm_out)
+            sm_in = plt.cm.ScalarMappable(cmap=sns.cm.mako, norm=norm_in)
         else:
             fig = plt.figure(figsize=figsize)
             norm = mpl.colors.Normalize(vmin=0, vmax=lmax)
@@ -117,7 +117,7 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
             if extra_plots:
                 ax_distrib = fig_distrib.add_subplot(1, 1, 1)
                 ax_scatter = fig_scatter.add_subplot(1, 1, 1)
-            if measure == "centrality":
+            if measure == "strength":
                 ax_in = fig_in.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
                 ax_out = fig_out.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
                 ax_diff = fig_diff.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
@@ -150,7 +150,7 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                         ax_scatter = fig_scatter.add_subplot(len(keys_data) // prow, prow, (it + 1))
                         ax_scatter.set_yticklabels([])
                         ax_scatter.set_xticklabels([])
-                    if measure == "centrality":
+                    if measure == "strength":
                         ax_in = fig_in.add_subplot(len(keys_data) // prow, prow, (it + 1),
                                                    projection=ccrs.Orthographic(0, 90))
                         ax_out = fig_out.add_subplot(len(keys_data) // prow, prow, (it + 1),
@@ -191,14 +191,15 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
 
                 # Measure and plot .....................................................................................
 
-                if measure == "centrality":
+                if measure == "strength":
                     glon, glat = np.meshgrid(lon, lat)
-                    net, net_out = calc_centrality(am, len(lat), len(lon), min_dist=0, max_dist=np.inf, lat=glat, lon=glon)
+                    net, net_out = calc_strength(am, len(lat), len(lon), min_dist=0, max_dist=np.inf,
+                                                 latcorrected=True, lat=glat.reshape(-1), lon=glon.reshape(-1))
                     # generate plot
-                    plot_matrix(ax_in, net, lat, lon, min=0, max=lmax, levels=25)
+                    plot_matrix(ax_out, net_out, lat, lon, min=0, max=lmax, levels=100)
                     if not np.all(np.round(net,10) == np.round(net_out,10)):
-                        plot_matrix(ax_out, -net_out, lat, lon, min=0, max=lmax, levels=25)
-                        plot_matrix(ax_diff, net-net_out, lat, lon, min=lmin, max=lmax, levels=25)
+                        plot_matrix(ax_in, -net, lat, lon, min=0, max=lmax, levels=100)
+                        plot_matrix(ax_diff, net_out-net, lat, lon, min=lmin, max=lmax, levels=100)
 
                     if extra_plots is True:
                         plot_cumsum(ax_distrib, [net, net_out], ["in strength", "out strength"], lmax,
@@ -207,11 +208,12 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                                      ptype=ptype)
 
                 elif measure == "average_connections":
-                    net, net_out = calc_average_connections(am, len(lat), len(lon), min_dist=0, max_dist=np.inf)
+                    net, net_out = calc_average_connections(am, len(lat), len(lon), min_dist=0, max_dist=1000)
                     # generate plot
                     plot_matrix(ax_in, net, lon, lat, min=0, max=lmax)
                     plot_matrix(ax_out, -net_out, lon, lat, min=0, max=lmax)
-                else:  # measures: centrality, clustering, closeness, betweeness, eigenvector
+
+                else:  # measures: strength, clustering, closeness, betweeness, eigenvector
                     function = getattr(netprop, 'calc_' + measure)
                     net = function(am, len(lat), len(lon))
                     # generate plot
@@ -228,7 +230,7 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                         fig_scatter.savefig(savename_scatter, dpi=200, bbox_inches='tight')
                         fig_distrib.clear()
 
-                    if measure == "centrality":
+                    if measure == "strength":
                         cbar_ax_in = fig_in.add_axes([0.93, 0.15, 0.02, 0.7])
                         cbar_ax_out = fig_out.add_axes([0.93, 0.15, 0.02, 0.7])
                         cbar_ax_diff = fig_diff.add_axes([0.93, 0.15, 0.02, 0.7])
@@ -286,7 +288,7 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                 fig_scatter.subplots_adjust(wspace=0.1, hspace=0.1)
                 fig_scatter.savefig(opath + oname + "scatter", dpi=200, bbox_inches='tight')
 
-            if measure == "centrality":
+            if measure == "strength":
                 cbar_ax_in = fig_in.add_axes([0.93, 0.15, 0.02, 0.7])
                 cbar_ax_out = fig_out.add_axes([0.93, 0.15, 0.02, 0.7])
                 cbar_ax_diff = fig_diff.add_axes([0.93, 0.15, 0.02, 0.7])
@@ -336,10 +338,10 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
 #         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
 #         filename=args['<files>'], output=args['--output'])
 
-ss = [100, 200, 400, 600, 800, 1000, 1200]
+ss = [600]
 seg = 40
 l = 0
 for s in ss:
-    main(f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/CM_q_s{seg}_l0to{l}_1000_2000.h5",
-         f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/", "eigenvector", 0.5,
-         extra_plots=False, ptype="grid", prow=5, lmin=0, lmax=0.05)
+    main(f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/VM_1763_1803.h5",
+         f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/", "strength", 0,
+         extra_plots=True, ptype="grid", prow=5, lmin=-1e5, lmax=1e5)

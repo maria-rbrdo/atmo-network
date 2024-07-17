@@ -11,6 +11,8 @@ from alive_progress import alive_bar
 import graph_tool.all as gt
 import scipy
 
+from networks.calculate.clustering import *
+
 # ------------------------------------------------------------------------------------------------------------------
 # Distance:
 # ------------------------------------------------------------------------------------------------------------------
@@ -71,7 +73,7 @@ def calc_distance_matrix(lat1, lat2, lon1, lon2):
 # ----------------------------------------------------------------------------------------------------------------------
 # Centrality:
 # ----------------------------------------------------------------------------------------------------------------------
-def calc_centrality(am, nlat, nlon, min_dist=0, max_dist=np.inf, lat=None, lon=None):
+def calc_strength(am, nlat, nlon, min_dist=0, max_dist=np.inf, latcorrected=False, lat=None, lon=None):
     # discard edges shorter than min_dist / longer than max_dist
     if min_dist != 0 or max_dist != np.inf:
         dist_matrix = calc_distance_matrix(lat, lat, lon, lon)
@@ -79,8 +81,12 @@ def calc_centrality(am, nlat, nlon, min_dist=0, max_dist=np.inf, lat=None, lon=N
         am[dist_matrix > max_dist] = 0
 
     # calculate centrality
-    out_centrality = np.sum(am, 0) / am.shape[0]
-    in_centrality = np.sum(am, 1) / am.shape[0]
+    if latcorrected:
+        out_centrality = np.sum(am * np.cos(np.deg2rad(lat)).reshape(-1, 1), 0) / am.shape[0]
+        in_centrality = np.sum(am * np.cos(np.deg2rad(lat)).reshape(-1, 1), 1) / am.shape[0]
+    else:
+        out_centrality = np.sum(am, 0) / am.shape[0]
+        in_centrality = np.sum(am, 1) / am.shape[0]
 
     out_centrality_matrix = out_centrality.reshape(nlat, nlon)
     in_centrality_matrix = in_centrality.reshape(nlat, nlon)
@@ -111,7 +117,6 @@ def calc_average_connections(am, nlat, nlon, min_dist=0, max_dist=np.inf):
 # Local clustering:
 # ------------------------------------------------------------------------------------------------------------------
 def calc_clustering(am, nlat, nlon):
-
     g = gt.Graph(scipy.sparse.lil_matrix(am))
     clust = gt.local_clustering(g)
     clust_matrix = clust.get_array().reshape(nlat, nlon)
@@ -122,7 +127,6 @@ def calc_clustering(am, nlat, nlon):
 # Closeness:
 # ------------------------------------------------------------------------------------------------------------------
 def calc_closeness(am, nlat, nlon):
-
     g = gt.Graph(scipy.sparse.lil_matrix(am))
     close = gt.closeness(g)
     close_matrix = close.get_array().reshape(nlat, nlon)
@@ -134,7 +138,6 @@ def calc_closeness(am, nlat, nlon):
 # Betweeness:
 # ----------------------------------------------------------------------------------------------------------------------
 def calc_betweeness(am, nlat, nlon):
-
     g = gt.Graph(scipy.sparse.lil_matrix(am))
     between = gt.closeness(g)
     between_matrix = between.get_array().reshape(nlat, nlon)
@@ -155,16 +158,16 @@ def calc_eigenvector(am, nlat, nlon):
 # ------------------------------------------------------------------------------------------------------------------
 # Community detection:
 # ------------------------------------------------------------------------------------------------------------------
-def calc_communities(am, nlat, nlon):
-    g = gt.Graph(scipy.sparse.lil_matrix(am))
-    state = gt.minimize_blockmodel_dl(g)
-    com = state.get_blocks()
-    del state
-    print(np.unique(com))
-    com_matrix = com.get_array().reshape(nlat, nlon)
+def calc_communities(am, nlat, nlon, lmax=np.inf):
+    A = AdjacencyMatrix(am)
+    com = np.array(len(am))
+    G = Community(level=0, label="0", indices=np.array(range(nlat*nlon)))
 
+    split_graph(A, G, modularity=configuration_model, lmax=lmax)
+    assign_communities(G, com, lmax=lmax)
+
+    com_matrix = com.reshape(nlat, nlon)
     return com_matrix
-
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Probability distribution:
@@ -200,7 +203,7 @@ def calc_cum_prob_distrib(am, measure, savename, dpi=200):
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-# PDensity:
+# Density:
 # ----------------------------------------------------------------------------------------------------------------------
 def calc_density(am):
     degrees = np.array([len(np.nonzero(am[i, :])[0]) for i in range(len(am))])
