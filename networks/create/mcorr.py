@@ -1,0 +1,204 @@
+"""
+========================================================================================================================
+Correlation-Based Adjacency Matrix Building Script
+========================================================================================================================
+This script reads the HDF5 net-output file from the model, splits it into segments, and finds the correlation-based
+adjacency matrix between all grid points for each segment.
+
+Correlations can be found at zero lag (lag = False) or at time lag (lag = True). Data is saved to a HDF5 file in the
+output directory specified.
+------------------------------------------------------------------------------------------------------------------------
+Usage:
+    dep_matrix.py <files> <lmax> [--lmin=<lmin>] [--segments=<segments>] [--dsize=<dsize>]
+
+Options:
+    --lmin=<lmin>     Minimum lag [default: 0]
+    --segments=<seg>  Segments in which to break time series [default: 1]
+    --dsize=<dsize>   Down-sampling factor [default: 4]
+------------------------------------------------------------------------------------------------------------------------
+Notes:
+- Available fields: ('h', 'd', 'q', 'z')
+------------------------------------------------------------------------------------------------------------------------
+"""
+import os
+import h5py
+import numpy as np
+import pandas as pd
+import skimage as ski
+from docopt import docopt
+from alive_progress import alive_bar
+
+#%%
+def PCC(data, max_lag, min_lag=0):
+    """
+        This function finds the Pearson correlation matrix from data. The
+        weight magnitude of each edge is the absolute value of the maximum
+        correlation.
+
+        ==========================================================================================
+        Parameters :
+        ------------------------------------------------------------------------------------------
+        Name    : Type              Description
+        ------------------------------------------------------------------------------------------
+        data    : numpy.ndarray     Array of data where each row is the timeseries of a node.
+        max_lag : int               Maximum lag considered
+        min_lag : int, optional     Minimum lag considered [default: 0].
+        ==========================================================================================
+
+        Returns:
+        -------
+        numpy.ndarray
+            Adjacency matrix, with shape (nlon*nlat, nlon*nlat).
+        """
+
+    if max_lag == 0:
+        return np.corrcoef(data), np.zeros(shape=(data.shape[0], data.shape[0]))
+
+    elif type(max_lag) is int and type(min_lag) is int and max_lag > 0 and min_lag >= 0:
+        with alive_bar(max_lag-min_lag-1, force_tty=True) as bar:
+
+            lm = np.zeros(shape=(data.shape[0], data.shape[0]))  # lag matrix
+            cm = np.zeros(shape=(data.shape[0], data.shape[0]))  # correlation matrix (NO ZERO LAG)
+
+            # Positive lags — from j to i:
+            for lag in range(min_lag+1, max_lag):
+
+                data_i = data[:, lag:]  # series i -> moving forwards
+                data_j = data[:, :-lag]  # series j -> moving backwards
+
+                cov = np.cov(data_i, data_j)  # compute covariance
+
+                var_i = np.diag(cov[:int(len(cov) / 2), :int(len(cov) / 2)])  # variance of original series
+                var_j = np.diag(cov[int(len(cov) / 2):, int(len(cov) / 2):])  # variance of lagged series
+                var_ij = np.outer(var_i, var_j)  # product of variances
+
+                corr = cov[:int(len(cov) / 2), int(len(cov) / 2):] / np.sqrt(var_ij)  # correlation (normalised var)
+
+                mask = np.abs(cm) >= np.abs(corr)
+                cm = np.where(mask, cm, corr)  # store biggest entries
+                lm = np.where(mask, lm, lag * np.ones_like(lm))  # store the lag
+
+                bar()  # update bar
+
+        # only keep the link directions with the largest absolute value
+        mask = np.abs(cm) > np.abs(cm.T)
+        cm = np.where(mask, cm, np.zeros_like(cm))
+        lm = np.where(mask, lm, np.zeros_like(lm))
+
+        return cm, lm
+
+    else:
+        raise ValueError('lag must be an integer greater than zero.')
+
+
+#%%
+def main(fpath, lmax, lmin=0, segments=1, dsize=4):
+    """
+        ==========================================================================================
+        Parameters :
+        ------------------------------------------------------------------------------------------
+        Name    : Type [units]          Description
+        ------------------------------------------------------------------------------------------
+        fpath   : string [-]            Path to the data file.
+        lmax : int [days]               Maximum lag considered.
+        lmin : int, optional [days]     Minimum lag considered [default: 0].
+        segments: int, optional [-]     Segments in which to break time series [default: 1].
+        dsize: int, optional [-]        Down-sampling factor [default: 4].
+        ==========================================================================================
+    """
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # Prepare directory:
+    # ------------------------------------------------------------------------------------------------------------------
+
+    print('Preparing directory...')
+
+    # obtain data from fpath
+    info = os.path.basename(fpath).split("_")
+    fld, tstart, tend = info[0], info[1], info[2]
+    opath = os.path.dirname(fpath) + f'/CM_{fld}_s{segments}_l{lmin}to{lmax}_{info[1]}_{info[2]}.h5'
+
+    # delete files from previous runs
+    try:
+        os.remove(opath)
+        print(f"Previous file '{opath}' deleted successfully.")
+    except:
+        pass
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # Run:
+    # ------------------------------------------------------------------------------------------------------------------
+
+    with h5py.File(fpath, mode='r') as f:
+
+        # Loading data .................................................................................................
+
+        print("Loading data...")
+
+        # latitude and longitude
+        lat = f['latitude'][:]
+        lon = f['longitude'][:]
+        # reduced latitude and longitude
+        rlat = ski.measure.block_reduce(lat, block_size=dsize, func=np.mean)
+        rlon = ski.measure.block_reduce(lon, block_size=dsize, func=np.mean)
+        # delete unnecessary arrays
+        del lat, lon
+
+        # time
+        t = f['time'][:]
+        # time-step
+        dt = t[1] - t[0]
+
+        # number of points
+        nlat, nlon, nt = len(rlat), len(rlon), len(t)
+
+        # other
+        diter = int(nt / segments)  # iterations/slice
+        lmax = int(lmax/dt)  # max lag in iter
+        lmin = int(lmin/dt)  # min lag in iter
+
+        print(f"* time segments cover: {diter*dt} days from {tstart} to {tend}")
+
+        with h5py.File(opath, mode='a') as store:
+            store.create_dataset("latitude", data=rlat)
+            store.create_dataset("longitude", data=rlon)
+
+        # Calculating correlation matrix ...............................................................................
+
+        print("Calculating correlation matrix...")
+
+        for i in range(segments):
+
+            print(f"* segment: {i+1}/{segments}")
+
+            # find matrix
+            data = f["data"][:, :, i*diter:(i+1)*diter]
+
+            # reduce matrix
+            rdata = ski.measure.block_reduce(data, block_size=(dsize, dsize, 1), func=np.mean)
+            del data
+
+            # squeeze matrix
+            rsdata = rdata.reshape(-1, diter)
+
+            # calculate adjacency matrix
+            mcorr, mlag = PCC(rsdata, max_lag=lmax, min_lag=lmin)
+            mlag = mlag * dt  # from steps to hours
+
+            # save adjacency matrix
+            tstart = t[i * diter]
+            tend = t[(i + 1)*diter-1]
+            key = "t_" + str(tstart) + "_" + str(tend) + "_" + str(i)
+            with h5py.File(opath, mode='a') as store:
+                store.create_dataset(key, data=mcorr)
+                store.create_dataset(key+"_lags", data=mlag)
+
+#%%
+#if __name__ == "__main__":
+#    args = docopt(__doc__)
+#    main(fpath=args['<files>'], lmax=int(args['<lmax>']), lmin=int(args['--lmin']), segments=int(args['--segments']),
+#         dsize=args['--dsize'])
+
+ss = [100, 200, 400, 600, 800, 1000, 1200]
+for s in ss:
+    main(f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/q_1000_2000", lmax=7, segments=40, dsize=4)
