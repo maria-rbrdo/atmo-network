@@ -17,18 +17,20 @@ from alive_progress import alive_bar
 
 # Parameters for file and field selection ..............................................................................
 
-fld = 'v'           # Field to visualize
-it_start = 1250     # First iteration to plot
-it_end = 1300       # Last iteration to plot
+fld = 'q'           # Field to visualize
+it_start = 1650     # First iteration to plot
+it_end = 1660       # Last iteration to plot
+dt = 2              # Timestep
 res = 'T170'        # Resolution ('T2730', 'T1365', 'T682', 'T341', 'T170', 'T85', 'T42', 'T21')
 cstr = '0'          # Frequency parameter for job identification
 tsat = '600'        # Amplitude parameter for job identification
-levels = 15         # Levels graph
-lmin = None         # Min level
-lmax = None           # Max level
+levels = 250        # Levels graph
+lmin = 0            # Min level
+lmax = 2.3          # Max level
 ptype = "grid"      # Plot type: grid or individual plots
 prow = 5            # Plots per row
-mzav = False         # Subtract zonal average?
+mzav = False        # Subtract zonal average?
+new = False         # New or old labeling?
 
 job = 'pv50-nu4-urlx' + '.c' + cstr + 'sat' + tsat + '.' + res    # Job name
 host = "localhost"   # localhost or remotehost
@@ -57,7 +59,7 @@ nlat = nlon // 2
 # Host .................................................................................................................
 
 if host == "localhost":
-    folder = os.path.expanduser("../../dataloc/" + job + "/imgs/")
+    folder = os.path.join("/Volumes/Maria/dataloc/" + job + "/imgs/")
     tmp = np.loadtxt(f'../../dataloc/grids/GRID.{res}', max_rows=(nlat // 2))
 elif host == "remotehost":
     folder = os.path.abspath("/home/reboredoprad/bob/dataloc/bb/swvac/" + job + "/imgs/")
@@ -88,23 +90,27 @@ if ptype == "individual":
     plt.rcParams.update({'font.size': 30})
     fig = plt.figure(figsize=(40, 30))
 elif ptype == "grid":
-    plt.rcParams.update({'font.size': 50})
-    fig = plt.figure(figsize=(30, 50))
-    norm = mpl.colors.Normalize(vmin=lmin, vmax=lmax)
-    sm = plt.cm.ScalarMappable(cmap=sns.color_palette("icefire", as_cmap=True), norm=norm)
+    plt.rcParams.update({'font.size': 25})
+    #fig = plt.figure(figsize=(30, 50))
+    fig = plt.figure(figsize=(15, 6.4))
+    #norm = mpl.colors.Normalize(vmin=lmin, vmax=lmax)
+    #sm = plt.cm.ScalarMappable(cmap=sns.color_palette("Spectral_r", as_cmap=True), norm=norm)
 
 # Plot contours
-with alive_bar(it_end-it_start, force_tty=True) as bar:
-    for it in np.arange(it_start, it_end, 1, dtype=int):
+with alive_bar((it_end-it_start)//dt, force_tty=True) as bar:
+    for i, it in enumerate(np.arange(it_start, it_end, dt, dtype=int)):
         # Set projection
         if ptype == "individual":
             ax = fig.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
         elif ptype == "grid":
-            ax = fig.add_subplot((it_end-it_start)//prow, prow, (it - it_start + 1), projection=ccrs.Orthographic(0, 90))
+            ax = fig.add_subplot((it_end-it_start)//dt//prow, prow, i+1, projection=ccrs.Orthographic(0, 90))
         ax.set_global()
 
         # Get data
-        tstr = f"{it:05}"  # Label of the file at that iteration
+        if new:
+            tstr = f"{it:09.3f}"  # Label of the file at that iteration
+        else:
+            tstr = f"{it:05}"  # Label of the file at that iteration
         qxy = get_data(nlon, tstr, job, fld, host=host, swend=False)
         qxy = np.concatenate([qxy, np.atleast_2d(qxy[:, 0]).T], axis=1)
 
@@ -117,7 +123,13 @@ with alive_bar(it_end-it_start, force_tty=True) as bar:
 
         # Plot
         filled_c = ax.contourf(xs, ys, qxy, levels, transform=ccrs.PlateCarree(),
-                               cmap=sns.color_palette("icefire", as_cmap=True), vmin=lmin, vmax=lmax)
+                               cmap=sns.color_palette("Spectral_r", as_cmap=True), vmin=lmin, vmax=lmax)
+
+        A0 = int(tsat)/600 * 0.15 * 10000
+        hb = lambda lon, lat: A0 * np.sin(2 * lat) ** 2 * np.cos(2 * lon)
+        X, Y = np.meshgrid(np.deg2rad(xs), np.deg2rad(ys))
+        HB = hb(X, Y)
+        ax.contour(xs, ys, HB, colors='white', linewidths=1.25, transform=ccrs.PlateCarree())
         # ax.contour(xs, ys, qxy, 20, transform=ccrs.PlateCarree(), colors='black', linestyles="--")
 
         if ptype == "individual":
@@ -129,8 +141,9 @@ with alive_bar(it_end-it_start, force_tty=True) as bar:
         bar()
 
 if ptype == "grid":
-    cbar_ax = fig.add_axes([0.93, 0.15, 0.02, 0.7])
-    fig.colorbar(sm, cax=cbar_ax, orientation='vertical')
+    #cbar_ax = fig.add_axes([0.1, 0.15, 0.9, 0.05])
+    #cbar = fig.colorbar(sm, cax=cbar_ax, orientation='horizontal', extend="both")
+    #cbar.set_label(r'$qH/\Omega$ (unitless)')
     fig.subplots_adjust(wspace=0.1, hspace=0.1)
     fig.savefig(f"{folder}/{fld}_{it_start}_{it_end}", dpi=200, bbox_inches='tight')
     fig.clear()

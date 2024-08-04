@@ -29,35 +29,28 @@ from networks.calculate.netprop import *
 from networks.plot.plot import *
 
 dpi = 200
-def main(fname, opath, tau=0, pdensity=False):
-    """
-        This function runs the script.
+ss = [100, 200, 400, 600, 800, 1000, 1200]
+s = 600
+seg = 40
+l = 0
+tau = 0
 
-        ==========================================================================================
-        Parameters :
-        ------------------------------------------------------------------------------------------
-        Name        : Type                  Description
-        ------------------------------------------------------------------------------------------
-        fpath       : string                Path to the data file.
-        opath       : string                Path to the output directory.
-        tau         : int, optional         Threshold to apply [default: 0].
-        pdensity    : bool, optional        Whether to plot the density evolution [default: False].
-        ==========================================================================================
-    """
+# ------------------------------------------------------------------------------------------------------------------
+# Prepare directory:
+# ------------------------------------------------------------------------------------------------------------------
+fnames = [f"/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/VM_1750_1800.h5"]
+opath = f"/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/"
+oname = f"{fnames[0].split("/")[-1].split(".")[0] + f"_evol"}/"
+folder = os.path.join(opath + oname)
+if not os.path.exists(folder):
+    os.mkdir(folder)
 
-    # ------------------------------------------------------------------------------------------------------------------
-    # Prepare directory:
-    # ------------------------------------------------------------------------------------------------------------------
+# Initialise arrays ....................................................................................................
+vals = []
+time = []
 
-    oname = f"{fname.split("/")[-1].split(".")[0] + f"_evol_t{tau}"}/"
-    folder = os.path.dirname(opath + oname)
-    if not os.path.exists(folder):
-        os.mkdir(folder)
-
-    # ------------------------------------------------------------------------------------------------------------------
-    # Run:
-    # ------------------------------------------------------------------------------------------------------------------
-
+# Iterate ..............................................................................................................
+for fname in fnames:
     with h5py.File(fname, mode='r') as f:
 
         # Load data ....................................................................................................
@@ -70,21 +63,11 @@ def main(fname, opath, tau=0, pdensity=False):
         keys_lags = {k for k in f.keys() if k.endswith("_lags")}
         keys_data = set(f.keys()) - {"longitude", "latitude"} - keys_lags
 
-        # Initialise arrays ............................................................................................
-        lstr = []
-        lstr_std = []
-        llen = []
-        llen_std = []
-        if pdensity:
-            density = []
-            density_std = []
-        time = []
-
         # Iterate ......................................................................................................
         with alive_bar(int(len(keys_data)), force_tty=True) as bar:
             for k in sorted(keys_data):
                 # Load data ............................................................................................
-                am = f[k][:]  # get correlation data
+                am = f[k][:]  # get data
                 np.fill_diagonal(am, 0)  # take out diagonal
                 am = np.abs(am)  # take absolute value
                 am[np.abs(am) <= tau] = 0  # impose threshold
@@ -98,74 +81,30 @@ def main(fname, opath, tau=0, pdensity=False):
                 # Measure and store ....................................................................................
 
                 # Strength
-                net, net_out = calc_strength(am, len(lat), len(lon), min_dist=0, max_dist=np.inf,
+                net, _ = calc_strength(am, len(lat), len(lon), min_dist=0, max_dist=np.inf,
                                              latcorrected=False, lat=glat, lon=glon)
-                all_str = np.concatenate((net, net_out))
-                lstr.append(np.mean(all_str, axis=(0, 1)))
-                lstr_std.append(np.std(all_str, axis=(0, 1)))
+                vals.append(net.reshape(-1))
 
-                # Distance
-                net, net_out = calc_avlen(am, len(lat), len(lon), glat, glon)
-                all_len = np.concatenate((net, net_out))
-                llen.append(np.mean(all_len, axis=(0, 1)))
-                llen_std.append(np.std(all_len, axis=(0, 1)))
-
-                # Density
-                if pdensity:
-                    all_density = np.calc_density(am)
-                    density.append(np.mean(all_density))
-                    density_std.append(np.std(all_density))
+                # Clustering
+                #clust = calc_clustering(am)
+                #vals.append(clust)
 
                 #%% Update bar
                 bar()
 
-        # Plot .........................................................................................................
+# Plot .........................................................................................................
 
-        plt.rcParams.update({'font.size': 50})
-        fig = plt.figure(figsize=(40, 20), dpi=200)
-        ax_str = fig.add_subplot(1, 1, 1)
-        ax_dst = ax_str.twinx()
-
-        lstr = np.array(lstr)
-        lstr_std = np.array(lstr_std)
-        llen = np.array(llen)
-        llen_std = np.array(llen_std)
-
-        ax_str.plot(time, lstr, "-", color='tab:red', linewidth=7)
-        ax_str.fill_between(time, lstr+lstr_std, lstr-lstr_std, color='tab:red', alpha=0.2)
-        ax_str.tick_params(axis='y', labelcolor='tab:red')
-        ax_dst.plot(time, llen, "-", color='tab:blue', linewidth=7)
-        ax_dst.fill_between(time, llen + llen_std, llen-llen_std, color='tab:blue', alpha=0.2)
-        ax_dst.tick_params(axis='y', labelcolor='tab:blue')
-
-        ax_str.set_xlabel('time (days)')
-        ax_str.set_ylabel('link strength', color='tab:red')
-        ax_dst.set_ylabel('link length', color='tab:blue')
-
-        #if pdensity:
-        #    density = np.array(density)
-        #    density_std = np.array(density_std)
-
-        #    ax.plot(times, density, "k-", label="Density")
-        #    ax.fill_between(times, density + density_std, density-density_std, c="k", alpha=0.2)
-
-        fig.tight_layout()
-        fig.savefig(opath + oname + "evol", dpi=200, bbox_inches='tight')
-
-#if __name__ == "__main__":
-
-#    args = docopt(__doc__)
-
-#    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], measure=args['<measure>'],
-#         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
-#         filename=args['<files>'], output=args['--output'])
-
-ss = [100, 200, 400, 600, 800, 1000, 1200]
-ss = [600]
-seg = 40
-l = 0
-for s in ss:
-    #main(f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/VM_1763_1803.h5",
-    #     f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/", 0)
-    main(f"../../../dataloc/netcdf/netdata/data.h5",
-         f"../../../dataloc/netcdf/netdata/", 0)
+plt.rcParams.update({'font.size': 30})
+fig = plt.figure(figsize=(20, 7), dpi=200)
+ax = fig.add_subplot(1, 1, 1)
+ax.set_xlabel('$t$ (days)')
+ax.set_ylabel('global clustering coefficient')
+#ax.axvspan(1773,1797,color="gray",alpha=0.3)
+#ax.axvspan(1862,1893,color="gray",alpha=0.3)
+ax.boxplot(vals, positions=[t for t in time], showfliers=False, widths=1.5, boxprops=dict(linewidth=2),
+           whiskerprops=dict(linewidth=2), manage_ticks=False, medianprops=dict(color="black", linewidth=2))
+ax.plot([t for t in time], [np.mean(l) for l in vals], "k*")
+box = ax.get_position()
+ax.set_position([box.x0, box.y0 + 0.05, box.width, box.height * 1])
+fig.tight_layout()
+fig.savefig(opath + oname + "evol", dpi=200, bbox_inches='tight')

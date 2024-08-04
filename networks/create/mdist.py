@@ -1,6 +1,8 @@
 import os
 import h5py
+import matplotlib.pyplot as plt
 import numpy as np
+import cartopy.crs as ccrs
 from alive_progress import alive_bar
 
 def iposition(ylim, xlim, npart):
@@ -113,6 +115,15 @@ def track(upath, vpath, npart, nt, dt, sph, ylim=(0, 90), xlim=(0, 360)):
         print("Calculating particles trajectories:")
         with alive_bar(nt-1, force_tty=True) as bar:
             for i in range(nt - 1):
+                # fig = plt.figure(figsize=(50,50))
+                # ax = fig.add_subplot(1,1,1, projection=ccrs.Orthographic(0, 90))
+                # if sph:
+                #     ax.set_global()
+                #     ax.gridlines(color="k", linestyle=':')
+                # xx, yy = np.meshgrid(x, y)
+                # ax.quiver(xx[::5,::5], yy[::5,::5], fu['data'][::5,::5,i], fv['data'][::5,::5,i], transform=ccrs.PlateCarree())
+                # plt.show()
+
                 yidx = [np.nanargmin((y - X[n, 0, i]) ** 2) for n in range(npart)]
                 xidx = [np.nanargmin((x - X[n, 1, i]) ** 2) for n in range(npart)]
 
@@ -230,13 +241,13 @@ def main(upath, vpath, npart, sph, ylim=[0,90], xlim=[0,360]):
         store.create_dataset("adj", data=mtrack)
 
 
-#main("../../../dataloc/pv50-nu4-urlx.c0sat600.T170/netdata/u_1280_1300",
-#     "../../../dataloc/pv50-nu4-urlx.c0sat600.T170/netdata/v_1280_1300",
-#     1000, ylim=[25, 90], xlim=[0, 360], sph=True)
+main("/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat600.T170_highres/netdata/u_1772_1782",
+     "/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat600.T170_highres/netdata/v_1772_1782",
+     1000, ylim=[25, 90], xlim=[0, 360], sph=True)
 
-main("../../../dataloc/quadgyre/netdata/u_e0_s500_t15",
-     "../../../dataloc/quadgyre/netdata/v_e0_s500_t15",
-     1000, ylim=[-1, 1], xlim=[0, 2], sph=False)
+#main("../../../dataloc/quadgyre/netdata/u_e0_s500_t15",
+#     "../../../dataloc/quadgyre/netdata/v_e0_s500_t15",
+#     1000, ylim=[-1, 1], xlim=[0, 2], sph=False)
 
 
 

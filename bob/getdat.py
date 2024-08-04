@@ -31,7 +31,7 @@ def get_data(nlon, tstr, job, fld, host='remotehost', swend=False):
 
     # Define the directory
     if host == "localhost":
-        datadir = os.path.expanduser("../../dataloc")
+        datadir = os.path.join("/Volumes/Maria/dataloc/")
     elif host == "remotehost":
         datadir = os.path.abspath("/home/reboredoprad/bob/dataloc/bb/swvac")
     filepath = os.path.join(datadir, job, f"bobdata/{fld}.{tstr}")

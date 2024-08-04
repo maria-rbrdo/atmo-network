@@ -99,11 +99,13 @@ def plot_line(df, savename, dpi=200):
     fig, ax = plt.subplots(figsize=(20, 20))
 
     sns.lineplot(df, ax=ax, x=df.columns[0], y=df.columns[1], marker='o', markersize=15, linewidth=5, color="black", errorbar="sd")
+    plt.hlines(0.005, 0, 1, colors="black", linestyles="--", linewidth=5)
 
     ax.set_xlabel(f'{df.columns[0]}')
     ax.set_ylabel(f'{df.columns[1]}')
 
     ax.set_yscale('log')
+    ax.set_xlim(0, 1)
 
     # save figure
     fig.savefig(savename, dpi=dpi, bbox_inches='tight')

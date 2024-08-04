@@ -173,6 +173,7 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                         ax.set_global()
 
                 # Load data ............................................................................................
+                print("Loading data...")
                 am = f[k][:]  # get correlation data
                 np.fill_diagonal(am, 0)  # take out diagonal
                 am = np.abs(am)  # take absolute value
@@ -190,18 +191,18 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                     savename_scatter = opath + oname + 'write_{:06}_scatter.png'.format(times[-1])
 
                 # Measure and plot .....................................................................................
-
+                print("Calculating...")
                 if measure == "strength":
                     glon, glat = np.meshgrid(lon, lat)
                     net, net_out = calc_strength(am, len(lat), len(lon), min_dist=0, max_dist=np.inf,
                                                  latcorrected=False, lat=glat.reshape(-1), lon=glon.reshape(-1))
 
-                    print(np.max(net))
+                    print(calc_density(am))
                     # generate plot
-                    plot_matrix(ax_out, net_out, lat, lon, min=0, max=lmax, levels=25)
-                    if not np.all(np.round(net,10) == np.round(net_out,10)):
-                        plot_matrix(ax_in, -net, lat, lon, min=0, max=lmax, levels=25)
-                        plot_matrix(ax_diff, net_out-net, lat, lon, min=lmin, max=lmax, levels=25)
+                    plot_matrix(ax_out, net_out, lat, lon, min=0, max=lmax, levels=50)
+                    if not np.all(np.round(net,10) == np.round(net_out,50)):
+                        plot_matrix(ax_in, -net, lat, lon, min=0, max=lmax, levels=50)
+                        plot_matrix(ax_diff, net_out-net, lat, lon, min=lmin, max=lmax, levels=250)
 
                     if extra_plots is True:
                         plot_cumsum(ax_distrib, [net, net_out], ["in strength", "out strength"], lmax,
@@ -340,13 +341,16 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
 #         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
 #         filename=args['<files>'], output=args['--output'])
 
+ss = [100, 200, 400, 600, 800, 1000, 1200]
 ss = [600]
-seg = 40
+thresh = {100: 0.761, 200: 0.936, 400: 0.688, 600: 0.697, 800: 0.582, 1000: 0.802, 1200: 0.222}
+seg = 1
 l = 0
 for s in ss:
-    #main(f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/VM_1763_1803.h5",
-    #     f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/", "strength", 0,
-    #     extra_plots=True, ptype="grid", prow=5, lmin=-75, lmax=75)
-    main(f"../../../dataloc/netcdf/netdata/VM.h5",
-         f"../../../dataloc/netcdf/netdata/", "strength", 0,
-         extra_plots=True, ptype="grid", prow=5, lmin=-3e11, lmax=3e11)
+    # f"/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/CM_q_s1_l0to0_1000_2000.h5"
+    main(f"/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/VM_1600_1900.h5",
+         f"/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/", "strength", 0,
+         extra_plots=False, ptype="individual", prow=5, lmin=-70, lmax=70)
+    #main(f"../../../dataloc/netcdf/netdata/VM.h5",
+    #     f"../../../dataloc/netcdf/netdata/", "strength", 0,
+    #     extra_plots=True, ptype="grid", prow=5, lmin=-3e11, lmax=3e11)

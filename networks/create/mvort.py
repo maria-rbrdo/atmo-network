@@ -112,6 +112,7 @@ def main(fpath, dsize=4):
         lon = f['longitude'][:]
         t = f['time'][:]
         nlat, nlon, nt = len(lat), len(lon), len(t)
+        dt = t[1] - t[0]
 
         # reduced latitude and longitude
         rlat = ski.measure.block_reduce(lat, block_size=dsize, func=np.mean)
@@ -152,8 +153,8 @@ def main(fpath, dsize=4):
             for it in range(nt):
 
                 # find matrix
-                #vort = f["data"][:][:, :, it]
-                vort = f["data"][:][it, :, :]
+                vort = f["data"][:][:, :, it]
+                #vort = f["data"][:][it, :, :]
 
                 # reduce matrix
                 rvort = ski.measure.block_reduce(vort, block_size=(dsize, dsize), func=np.mean)
@@ -176,6 +177,8 @@ def main(fpath, dsize=4):
                 with h5py.File(opath, mode='a') as store:
                     store.create_dataset(key, data=mvort)
 
+                del rvort, gvort, gamma_j, gamma_i, term, u_jti, mvort
+
                 # update bar
                 bar()
 
@@ -193,5 +196,5 @@ def main(fpath, dsize=4):
 
 ss = [600]
 for s in ss:
-    #main(f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/z_1763_1803", dsize=2)
-    main(f"../../../dataloc/netcdf/netdata/data", dsize=4)
+    main(f"/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/z_1750_1800", dsize=2)
+    #main(f"/Volumes/Maria/dataloc/netcdf/netdata/data", dsize=4)

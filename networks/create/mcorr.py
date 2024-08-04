@@ -92,18 +92,19 @@ def PCC(data, max_lag, min_lag=0):
 
 
 #%%
-def main(fpath, lmax, lmin=0, segments=1, dsize=4):
+def main(fpath, lmax, lmin=0, window_size=1, window_step=1, dsize=4):
     """
         ==========================================================================================
         Parameters :
         ------------------------------------------------------------------------------------------
-        Name    : Type [units]          Description
+        Name    : Type [units]                  Description
         ------------------------------------------------------------------------------------------
-        fpath   : string [-]            Path to the data file.
-        lmax : int [days]               Maximum lag considered.
-        lmin : int, optional [days]     Minimum lag considered [default: 0].
-        segments: int, optional [-]     Segments in which to break time series [default: 1].
-        dsize: int, optional [-]        Down-sampling factor [default: 4].
+        fpath   : string [-]                    Path to the data file.
+        lmax : int [days]                       Maximum lag considered.
+        lmin : int, optional [days]             Minimum lag considered [default: 0].
+        window_size: float, optional [int]      Sliding window size with which to break time series [default: 1].
+        window_step: float, optional [int]      Sliding window step [default: 1].
+        dsize: int, optional [-]                Down-sampling factor [default: 4].
         ==========================================================================================
     """
 
@@ -116,7 +117,7 @@ def main(fpath, lmax, lmin=0, segments=1, dsize=4):
     # obtain data from fpath
     info = os.path.basename(fpath).split("_")
     fld, tstart, tend = info[0], info[1], info[2]
-    opath = os.path.dirname(fpath) + f'/CM_{fld}_s{segments}_l{lmin}to{lmax}_{info[1]}_{info[2]}.h5'
+    opath = os.path.dirname(fpath) + f'/CM_{fld}_w{window_size}_s{window_step}_l{lmin}to{lmax}_{info[1]}_{info[2]}.h5'
 
     # delete files from previous runs
     try:
@@ -153,11 +154,13 @@ def main(fpath, lmax, lmin=0, segments=1, dsize=4):
         nlat, nlon, nt = len(rlat), len(rlon), len(t)
 
         # other
-        diter = int(nt / segments)  # iterations/slice
+        isize = int(window_size / dt)  # iterations/slice
+        istep = int(window_step / dt)  # iterations step
+        segments = int((nt - isize)/istep+1)  # n iterations
         lmax = int(lmax/dt)  # max lag in iter
         lmin = int(lmin/dt)  # min lag in iter
 
-        print(f"* time segments cover: {diter*dt} days from {tstart} to {tend}")
+        print(f"* time segments cover: {segments*isize*dt} days from {tstart} to {tend}")
 
         with h5py.File(opath, mode='a') as store:
             store.create_dataset("latitude", data=rlat)
@@ -172,22 +175,26 @@ def main(fpath, lmax, lmin=0, segments=1, dsize=4):
             print(f"* segment: {i+1}/{segments}")
 
             # find matrix
-            data = f["data"][:, :, i*diter:(i+1)*diter]
+            data = f["data"][:, :, i*istep:i*istep+isize]
 
             # reduce matrix
             rdata = ski.measure.block_reduce(data, block_size=(dsize, dsize, 1), func=np.mean)
-            del data
 
             # squeeze matrix
-            rsdata = rdata.reshape(-1, diter)
+            rsdata = rdata.reshape(-1, isize)
+
+            # standarise
+            ddata = (rsdata - np.mean(rsdata, axis=1).reshape(-1, 1))/np.std(rsdata, axis=1).reshape(-1, 1)
+
+            del data, rdata, rsdata
 
             # calculate adjacency matrix
-            mcorr, mlag = PCC(rsdata, max_lag=lmax, min_lag=lmin)
+            mcorr, mlag = PCC(ddata, max_lag=lmax, min_lag=lmin)
             mlag = mlag * dt  # from steps to hours
 
             # save adjacency matrix
-            tstart = t[i * diter]
-            tend = t[(i + 1)*diter-1]
+            tstart = t[i * istep]
+            tend = t[i*istep+isize]
             key = "t_" + str(tstart) + "_" + str(tend) + "_" + str(i)
             with h5py.File(opath, mode='a') as store:
                 store.create_dataset(key, data=mcorr)
@@ -201,4 +208,5 @@ def main(fpath, lmax, lmin=0, segments=1, dsize=4):
 
 ss = [100, 200, 400, 600, 800, 1000, 1200]
 for s in ss:
-    main(f"../../../dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/q_1000_2000", lmax=7, segments=40, dsize=4)
+    main(f"/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/q_1000_2000", lmax=0,
+         window_size=50, window_step=25, dsize=2)

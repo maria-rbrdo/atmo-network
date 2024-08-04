@@ -125,14 +125,12 @@ def calc_average_connections(am, nlat, nlon, min_dist=0, max_dist=np.inf):
 
 
 # ------------------------------------------------------------------------------------------------------------------
-# Local clustering:
+# Global clustering:
 # ------------------------------------------------------------------------------------------------------------------
-def calc_clustering(am, nlat, nlon):
+def calc_clustering(am):
     g = gt.Graph(scipy.sparse.lil_matrix(am))
-    clust = gt.local_clustering(g)
-    clust_matrix = clust.get_array().reshape(nlat, nlon)
-
-    return clust_matrix
+    clust = gt.global_clustering(g, sampled=True)
+    return clust
 
 # ------------------------------------------------------------------------------------------------------------------
 # Closeness:
@@ -217,6 +215,8 @@ def calc_cum_prob_distrib(am, measure, savename, dpi=200):
 # Density:
 # ----------------------------------------------------------------------------------------------------------------------
 def calc_density(am):
-    degrees = np.array([len(np.nonzero(am[i, :])[0]) for i in range(len(am))])
-    return degrees
+    E = np.sum([len(np.nonzero(am[i, :])[0]) for i in range(am.shape[0])])
+    N = am.shape[0]
+    rho = 2 * E / (N * (N-1))
+    return rho
 
