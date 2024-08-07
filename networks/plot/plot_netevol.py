@@ -77,7 +77,7 @@ def main(fname, opath, measure, tau=0):
 
         # Iterate ......................................................................................................
         with alive_bar(int(len(keys_data)), force_tty=True) as bar:
-            for k in sorted(keys_data):
+            for k in sorted(keys_data)[0:1]:
 
                 # Load data ............................................................................................
                 am = fdata[k][:]  # get data
@@ -118,8 +118,9 @@ def main(fname, opath, measure, tau=0):
                 # %% Update bar
                 bar()
 
-    with h5py.File(oname, mode='a') as store:
-        store.create_dataset(measure, data=(vals, time))
+    with h5py.File(ofile, mode='a') as store:
+        store.create_dataset(measure, data=vals)
+        store.create_dataset(measure+"_t", data=time)
 
 #if __name__ == "__main__":
 
