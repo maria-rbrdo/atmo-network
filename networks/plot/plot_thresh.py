@@ -9,6 +9,8 @@ This script builds compares the density / link distance obtained for different t
 import h5py
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 from alive_progress import alive_bar
 from scipy.interpolate import CubicSpline
 

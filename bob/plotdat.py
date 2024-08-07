@@ -19,14 +19,14 @@ from alive_progress import alive_bar
 
 fld = 'q'           # Field to visualize
 it_start = 1650     # First iteration to plot
-it_end = 1660       # Last iteration to plot
+it_end = 1650       # Last iteration to plot
 dt = 2              # Timestep
 res = 'T170'        # Resolution ('T2730', 'T1365', 'T682', 'T341', 'T170', 'T85', 'T42', 'T21')
 cstr = '0'          # Frequency parameter for job identification
 tsat = '600'        # Amplitude parameter for job identification
 levels = 250        # Levels graph
-lmin = 0            # Min level
-lmax = 2.3          # Max level
+lmin = -0.075          # Min level
+lmax = 0.075           # Max level
 ptype = "grid"      # Plot type: grid or individual plots
 prow = 5            # Plots per row
 mzav = False        # Subtract zonal average?
@@ -91,10 +91,10 @@ if ptype == "individual":
     fig = plt.figure(figsize=(40, 30))
 elif ptype == "grid":
     plt.rcParams.update({'font.size': 25})
-    #fig = plt.figure(figsize=(30, 50))
+    fig = plt.figure(figsize=(30, 50))
     fig = plt.figure(figsize=(15, 6.4))
-    #norm = mpl.colors.Normalize(vmin=lmin, vmax=lmax)
-    #sm = plt.cm.ScalarMappable(cmap=sns.color_palette("Spectral_r", as_cmap=True), norm=norm)
+    norm = mpl.colors.Normalize(vmin=lmin, vmax=lmax)
+    sm = plt.cm.ScalarMappable(cmap=sns.color_palette("icefire", as_cmap=True), norm=norm)
 
 # Plot contours
 with alive_bar((it_end-it_start)//dt, force_tty=True) as bar:
@@ -141,9 +141,9 @@ with alive_bar((it_end-it_start)//dt, force_tty=True) as bar:
         bar()
 
 if ptype == "grid":
-    #cbar_ax = fig.add_axes([0.1, 0.15, 0.9, 0.05])
-    #cbar = fig.colorbar(sm, cax=cbar_ax, orientation='horizontal', extend="both")
-    #cbar.set_label(r'$qH/\Omega$ (unitless)')
+    cbar_ax = fig.add_axes([0.1, 0.15, 0.9, 0.05])
+    cbar = fig.colorbar(sm, cax=cbar_ax, orientation='horizontal', extend="both")
+    cbar.set_label(r"$k_i'^\mathrm{out} - k_i'^\mathrm{in}$ (unitless)")
     fig.subplots_adjust(wspace=0.1, hspace=0.1)
     fig.savefig(f"{folder}/{fld}_{it_start}_{it_end}", dpi=200, bbox_inches='tight')
     fig.clear()

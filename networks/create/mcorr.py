@@ -156,11 +156,14 @@ def main(fpath, lmax, lmin=0, window_size=1, window_step=1, dsize=4):
         # other
         isize = int(window_size / dt)  # iterations/slice
         istep = int(window_step / dt)  # iterations step
-        segments = int((nt - isize)/istep+1)  # n iterations
+        if istep != 0:
+            nsteps = int((nt - isize)/istep)  # n steps
+        else:
+            nsteps = 1
         lmax = int(lmax/dt)  # max lag in iter
         lmin = int(lmin/dt)  # min lag in iter
 
-        print(f"* time segments cover: {segments*isize*dt} days from {tstart} to {tend}")
+        print(f"* time segments cover: {nsteps*isize*dt} days from {tstart} to {tend}")
 
         with h5py.File(opath, mode='a') as store:
             store.create_dataset("latitude", data=rlat)
@@ -170,18 +173,19 @@ def main(fpath, lmax, lmin=0, window_size=1, window_step=1, dsize=4):
 
         print("Calculating correlation matrix...")
 
-        for i in range(segments):
-
-            print(f"* segment: {i+1}/{segments}")
+        for i in range(nsteps):
+            tstart = t[i * istep]
+            tend = t[i * istep + isize - 1]
+            print(f"* segment ({tstart}-{tend} days): {i+1}/{nsteps}")
 
             # find matrix
-            data = f["data"][:, :, i*istep:i*istep+isize]
+            data = f["data"][:, :, i*istep:i*istep+isize-1]
 
             # reduce matrix
             rdata = ski.measure.block_reduce(data, block_size=(dsize, dsize, 1), func=np.mean)
 
             # squeeze matrix
-            rsdata = rdata.reshape(-1, isize)
+            rsdata = rdata.reshape(-1, isize-1)
 
             # standarise
             ddata = (rsdata - np.mean(rsdata, axis=1).reshape(-1, 1))/np.std(rsdata, axis=1).reshape(-1, 1)
@@ -193,8 +197,6 @@ def main(fpath, lmax, lmin=0, window_size=1, window_step=1, dsize=4):
             mlag = mlag * dt  # from steps to hours
 
             # save adjacency matrix
-            tstart = t[i * istep]
-            tend = t[i*istep+isize]
             key = "t_" + str(tstart) + "_" + str(tend) + "_" + str(i)
             with h5py.File(opath, mode='a') as store:
                 store.create_dataset(key, data=mcorr)
@@ -207,6 +209,7 @@ def main(fpath, lmax, lmin=0, window_size=1, window_step=1, dsize=4):
 #         dsize=args['--dsize'])
 
 ss = [100, 200, 400, 600, 800, 1000, 1200]
+ss = [600]
 for s in ss:
-    main(f"/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/q_1000_2000", lmax=0,
-         window_size=50, window_step=25, dsize=2)
+    main(f"/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/q_1000_2000", lmax=7,
+         window_size=1000, window_step=0, dsize=2)

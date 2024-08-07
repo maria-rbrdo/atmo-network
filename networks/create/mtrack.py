@@ -235,9 +235,9 @@ def main(upath, vpath, npart, sph, ylim=[0,90], xlim=[0,360]):
         store.create_dataset("adj", data=mtrack)
 
 
-main("/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat600.T170_highres/netdata/u_1650_1663",
-     "/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat600.T170_highres/netdata/v_1650_1663",
-     2500, ylim=[25, 90], xlim=[0, 360], sph=True)
+main("/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat1000.T170_highres/netdata/u_1000_1015",
+     "/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat1000.T170_highres/netdata/v_1000_1015",
+     2500, ylim=[15, 90], xlim=[0, 360], sph=True)
 
 #main("/Volumes/Maria/dataloc/quadgyre/netdata/u_e0_s500_t15",
 #     "/Volumes/Maria/dataloc/quadgyre/netdata/v_e0_s500_t15",

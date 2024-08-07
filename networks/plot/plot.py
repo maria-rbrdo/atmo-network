@@ -89,6 +89,23 @@ def plot_scatter(ax, data_lst, names_lst, lmax, ptype):
         ax.set_ylabel(f'{names_lst[1]}')
 
 # ----------------------------------------------------------------------------------------------------------------------
+# Box plot:
+# ----------------------------------------------------------------------------------------------------------------------
+
+def plot_box(ax, splits, data_dics, time):
+
+    for tsplit in splits: # split times for 600: 1773-1797 and 1862-1893
+        ax.axvspan(tsplit[0], tsplit[1], color="gray", alpha=0.3)
+
+    for key in data_dics.keys():
+        ax.boxplot(data_dics[key], positions=[t for t in time],
+                   showfliers=False, widths=1.5, patch_artist=True, manage_ticks=False,
+                   boxprops=dict(linewidth=2),
+                   whiskerprops=dict(linewidth=2),
+                   medianprops=dict(color="black", linewidth=2))
+        ax.plot([t for t in time], [np.mean(l) for l in data_dics[key]], "k*")
+
+# ----------------------------------------------------------------------------------------------------------------------
 # Other:
 # ----------------------------------------------------------------------------------------------------------------------
 

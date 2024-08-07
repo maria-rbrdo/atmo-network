@@ -119,11 +119,11 @@ with h5py.File("/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat600.T170_highres/netda
 
             for ax in ax_list:
                 if sph:
-                    ax.scatter(coord[n, 1, 0], coord[n, 0, 0], c=color, marker="*", s=2, transform=ccrs.Geodetic())
+                    ax.scatter(coord[n, 1, -1], coord[n, 0, 0], c=color, marker="*", s=2, transform=ccrs.Geodetic())
                     ax.scatter(coord[n, 1, 0], coord[n, 0, 0], c=color, marker="o", s=2, transform=ccrs.Geodetic())
                     ax.plot(coord[n, 1, :], coord[n, 0, :], "-", color=color, alpha=0.25, transform=ccrs.Geodetic())
                 else:
-                    ax.scatter(coord[n, 1, 0], coord[n, 0, 0], c=color, marker="*", s=1)
+                    ax.scatter(coord[n, 1, -1], coord[n, 0, 0], c=color, marker="*", s=1)
                     ax.scatter(coord[n, 1, 0], coord[n, 0, 0], c=color, marker="o", s=1)
                     ax.plot(coord[n, 1, :], coord[n, 0, :], "-", color=color, alpha=0.10)
             bar()
