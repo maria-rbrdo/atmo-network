@@ -119,4 +119,4 @@ ax.set_yticklabels([])
 ax.set_xlabel(r"$r$ (days$^{-1}$)", labelpad=15)
 fig.subplots_adjust(left=0.07, right=0.95, top=0.9, bottom=0.2, wspace=0)
 
-fig.savefig("settings.png", dpi=200)
+fig.savefig("settings.png", dpi=300)

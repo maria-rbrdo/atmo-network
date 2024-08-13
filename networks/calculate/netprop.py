@@ -11,38 +11,10 @@ from alive_progress import alive_bar
 import graph_tool.all as gt
 import scipy
 
-from networks.calculate.clustering import *
-
 # ------------------------------------------------------------------------------------------------------------------
 # Distance:
 # ------------------------------------------------------------------------------------------------------------------
-def calc_distance(lat1, lat2, lon1, lon2):
-    lat1, lat2, lon1, lon2 = np.deg2rad(lat1), np.deg2rad(lat2), np.deg2rad(lon1), np.deg2rad(lon2)
-    R = 6371  # km radius Earth
-    Dlat = np.abs(lat1 - lat2)
-    Dlon = np.abs(lon1 - lon2)
-    a = np.sin(Dlat/2)**2 + np.cos(lat1)*np.cos(lat2)*np.sin(Dlon/2)**2
-    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1-np.round(a, 15)))
-    return R*c
-
-def calc_distances(am, lat, lon):
-    all_dist = np.array([])
-    with alive_bar(len(am), force_tty=True) as bar:
-        for i in range(len(am)):
-            # identify
-            lat2 = lat[np.nonzero(am[i, :])[0]]
-            lat1 = lat[i] * np.ones_like(lat2)
-            lon2 = lon[np.nonzero(am[i, :])[0]]
-            lon1 = lon[i] * np.ones_like(lon2)
-            # calculate
-            dist = calc_distance(lat1, lat2, lon1, lon2)
-            # append
-            all_dist = np.append(all_dist, dist)
-            # update bar
-            bar()
-    return all_dist
-
-def calc_distance_matrix(lat1, lat2, lon1, lon2):
+def calc_mdist(lat1, lat2, lon1, lon2):
     """
     Calculate the great-circle distance matrix between points specified by latitude and longitude.
 
@@ -56,6 +28,8 @@ def calc_distance_matrix(lat1, lat2, lon1, lon2):
 
     R = 6371  # km radius Earth
 
+    lat1, lat2, lon1, lon2 = np.deg2rad(lat1), np.deg2rad(lat2), np.deg2rad(lon1), np.deg2rad(lon2)
+
     # Create 2D grids of latitudes and longitudes
     lat1_grid, lat2_grid = np.meshgrid(lat1, lat2)
     lon1_grid, lon2_grid = np.meshgrid(lon1, lon2)
@@ -66,20 +40,21 @@ def calc_distance_matrix(lat1, lat2, lon1, lon2):
 
     # Haversine formula
     a = np.sin(Dlat / 2) ** 2 + np.cos(lat1_grid) * np.cos(lat2_grid) * np.sin(Dlon / 2) ** 2
-    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - np.round(a, 15)))
+    c = np.arctan2(np.sqrt(a), np.sqrt(1 - np.round(a, 15)))
 
-    return R * c
+    return 2 * R * c
 
-def calc_avlen(am, nlat, nlon, lat, lon):
-    # discard edges shorter than min_dist / longer than max_dist
-    dist_matrix = calc_distance_matrix(lat, lat, lon, lon)
-    out_avdist = np.sum(am * dist_matrix, 0) / np.sum(am, 0)
-    in_avdist = np.sum(am * dist_matrix, 1) / np.sum(am, 1)
+def calc_distance(am, nlat, nlon, lat, lon):
 
-    out_avdist_matrix = out_avdist.reshape(nlat, nlon)
-    in_avdist_matrix = in_avdist.reshape(nlat, nlon)
+    dist_matrix = calc_mdist(lat, lat, lon, lon)
 
-    return in_avdist_matrix, out_avdist_matrix
+    out_dist = np.sum(am * dist_matrix, 0) / am.shape[0]
+    in_dist = np.sum(am * dist_matrix, 1) / am.shape[1]
+
+    out_dist_matrix = out_dist.reshape(nlat, nlon)
+    in_dist_matrix = in_dist.reshape(nlat, nlon)
+
+    return in_dist_matrix, out_dist_matrix
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Centrality:
@@ -87,7 +62,7 @@ def calc_avlen(am, nlat, nlon, lat, lon):
 def calc_strength(am, nlat, nlon, min_dist=0, max_dist=np.inf, latcorrected=False, lat=None, lon=None):
     # discard edges shorter than min_dist / longer than max_dist
     if min_dist != 0 or max_dist != np.inf:
-        dist_matrix = calc_distance_matrix(lat, lat, lon, lon)
+        dist_matrix = calc_mdist(lat, lat, lon, lon)
         am[dist_matrix < min_dist] = 0
         am[dist_matrix > max_dist] = 0
 
@@ -142,13 +117,12 @@ def calc_closeness(am, nlat, nlon):
 
     return close_matrix
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # Betweeness:
 # ----------------------------------------------------------------------------------------------------------------------
-def calc_betweeness(am, nlat, nlon):
+def calc_betweenness(am, nlat, nlon):
     g = gt.Graph(scipy.sparse.lil_matrix(am))
-    between = gt.closeness(g)
+    between, _ = gt.betweenness(g)
     between_matrix = between.get_array().reshape(nlat, nlon)
 
     return between_matrix
@@ -162,21 +136,6 @@ def calc_eigenvector(am, nlat, nlon):
     eigen_matrix = eigen.get_array().reshape(nlat, nlon)
 
     return eigen_matrix
-
-
-# ------------------------------------------------------------------------------------------------------------------
-# Community detection:
-# ------------------------------------------------------------------------------------------------------------------
-def calc_communities(am, nlat, nlon, lmax=np.inf):
-    A = AdjacencyMatrix(am)
-    com = np.array(len(am))
-    G = Community(level=0, label="0", indices=np.array(range(nlat*nlon)))
-
-    split_graph(A, G, modularity=configuration_model, lmax=lmax)
-    assign_communities(G, com, lmax=lmax)
-
-    com_matrix = com.reshape(nlat, nlon)
-    return com_matrix
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Probability distribution:
@@ -217,6 +176,6 @@ def calc_cum_prob_distrib(am, measure, savename, dpi=200):
 def calc_density(am):
     E = np.sum([len(np.nonzero(am[i, :])[0]) for i in range(am.shape[0])])
     N = am.shape[0]
-    rho = 2 * E / (N * (N-1))
+    rho = E / (N * (N - 1))
     return rho
 

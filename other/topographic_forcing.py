@@ -20,7 +20,7 @@ hb = lambda phi, lamb, t: A(t)*np.sin(2*phi)**2*np.cos(2*lamb + w0*t)
 HB = hb(Phi, Lamb, T)
 
 # Plotting
-plt.rcParams.update({'font.size': 15})
+plt.rcParams.update({'font.size': 18})
 fig = plt.figure(figsize=(15, 4))
 
 x = np.rad2deg(lamb)
@@ -34,6 +34,7 @@ for i in range(5):
     ax.set_title(f'{t[i]:.1f} days')
 
 cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
-fig.colorbar(filled_c, cax=cbar_ax, orientation='vertical')
-fig.savefig("forcing", dpi=200, bbox_inches='tight')
+cbar = fig.colorbar(filled_c, cax=cbar_ax, orientation='vertical')
+cbar.set_label(r"$h_b$ (m)")
+fig.savefig("forcing", dpi=300, bbox_inches='tight')
 plt.close()

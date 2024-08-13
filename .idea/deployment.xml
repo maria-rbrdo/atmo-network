@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="Maths Institute" deleteMissingItems="true" confirmBeforeDeletion="false" autoUploadExternalChanges="true">
+  <component name="PublishConfigData" autoUpload="Always" serverName="reboredoprad@localhost:2222 password" deleteMissingItems="true" confirmBeforeDeletion="false" autoUploadExternalChanges="true">
     <option name="confirmBeforeDeletion" value="false" />
     <serverData>
       <paths name="Maths Institute">
         <serverdata>
           <mappings>
             <mapping deploy="/atmo_network" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="reboredoprad@localhost:2222 password">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/tmp/pycharm_project_440" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>

@@ -1,142 +1,76 @@
 """
 ========================================================================================================================
-Network Evolution Visualization Script
+Network Evolution Visualisation Script
 ========================================================================================================================
-This script plots the evolution of link strength, link distance, and density over the given graphs.
-------------------------------------------------------------------------------------------------------------------------
-Usage:
-    indiv_network.py <files> [--tau=<tau>]
-
-Options:
-    --tau=<tau>  Correlation threshold [default: 0]
-------------------------------------------------------------------------------------------------------------------------
-Notes:
-
+This script plots graph measures throughout time.
 ------------------------------------------------------------------------------------------------------------------------
 """
-
-import os
 import h5py
-
 import numpy as np
-import matplotlib as mpl
-from docopt import docopt
-import cartopy.crs as ccrs
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
-from alive_progress import alive_bar
+from matplotlib.ticker import FormatStrFormatter
 
-from networks.calculate.netprop import *
-from networks.plot.plot import *
 
-def main(fname, opath, measure, tau=0):
-    """
-        This function runs the script.
 
-        ==========================================================================================
-        Parameters :
-        ------------------------------------------------------------------------------------------
-        Name        : Type                  Description
-        ------------------------------------------------------------------------------------------
-        fpath       : string                Path to the data file.
-        opath       : string                Path to the output directory.
-        measure     : string                Network measure to plot.
-        tau         : int, optional         Threshold to apply [default: 0].
-        ==========================================================================================
-    """
+#fname = "/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat600.T170/CM_q_w25_s10_l0to0_1600_1900_evol/CM_q_w25_s10_l0to0_1600_1900_evol_t0.373.h5"
+#fname = "/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat600.T170/VM_1600_1900_evol/VM_1600_1900_evol_t0.h5"
+#oname = ".".join(fname.split(".")[:-1])+".png"
+#measures = ["density", "clustering", "strength", "out_strength", "closeness", "betweenness"]
+#labels = [r"$\rho$", r"$GC$", r"$\langle S_i^\mathrm{in} \rangle$", r"$\langle S_i^\mathrm{out} \rangle$", r"$C_i$", r"$BC_i$ ($10^4$)"]
+ss = [100, 200, 400, 600, 800, 1000, 1200]
+colors = ["tomato", "orange", "mediumseagreen", "darkturquoise", "cornflowerblue", "mediumslateblue", "orchid"]
+times = {100: (1700, 2000), 200: (1700, 2000), 400: (1200, 1500), 600: (1600, 1900),
+         800: (1150, 1450), 1000: (1450, 1750), 1200: (1700, 2000)}
+thresh = {100: 0.455, 200: 0.837, 400: 0.324, 600: 0.373, 800: 0.331, 1000: 0.599, 1200: 0.109}
+splits = {100: [("st", 1700, 2000)],
+          200: [("st", 1700, 2000)],
+          400: [("g", 1200, 1252), ("s", 1252, 1270), ("g", 1270, 1334), ("s", 1334, 1362), ("g", 1362, 1446), ("s", 1446, 1480), ("g", 1480, 1500)],
+          600: [("g", 1600, 1773), ("s", 1773, 1797), ("g", 1797, 1862), ("s", 1862, 1895), ("g", 1895, 1900)],
+          800: [("n", 1150, 1200), ("g", 1200, 1375), ("s", 1375, 1400), ("n", 1400, 1450)],
+          1000: [("n", 1450, 1530), ("g", 1530, 1732), ("s", 1732, 1750)],
+          1200: [("n", 1700, 2000)]}
+m = "density"
+w = 5.25  # 2.25  # 5
+ms = 10  # 10  # 20
+plt.rcParams.update({'font.size': 35})
+fig = plt.figure(figsize=(11, 20))
+for i, s in enumerate(ss):
+# for i, m in enumerate(measures):
+    with h5py.File(f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/"
+                   f"CM_q_w25_s10_l0to0_{times[s][0]}_{times[s][1]}_evol/"
+                   f"/CM_q_w25_s10_l0to0_{times[s][0]}_{times[s][1]}_evol_t{thresh[s]}.h5", mode='r') as fdata:
+        t = fdata[m+"_t"][:]
+        ax = plt.subplot(7, 1, i+1)
 
-    # ------------------------------------------------------------------------------------------------------------------
-    # Prepare directory:
-    # ------------------------------------------------------------------------------------------------------------------
+        for splt in splits[s]:
+            if splt[0] == "n":
+                ax.axvspan(splt[1], splt[2], alpha=0.25, color='gray')
+            if splt[0] == "st":
+                ax.axvspan(splt[1], splt[2], alpha=0.25, color='darkseagreen')
+            if splt[0] == "g":
+                ax.axvspan(splt[1], splt[2], alpha=0.5, color='lemonchiffon')
+            if splt[0] == "s":
+                ax.axvspan(splt[1], splt[2], alpha=0.25, color='tomato')
 
-    oname = f"{fname.split("/")[-1].split(".")[0]}"
-    folder = os.path.join(opath + oname +"_evol/")
-    ofile = f"{folder}{oname}_evol_t{tau}.h5"
-    if not os.path.exists(folder):
-        os.mkdir(folder)
+        if m == "strength":
+            bplot = ax.boxplot(fdata[m][:].T, positions=t, showfliers=False, widths=w, patch_artist=True, manage_ticks=False,
+                               boxprops=dict(linewidth=2.5), whiskerprops=dict(linewidth=2.5), medianprops=dict(linewidth=4, color="black"))
+            ax.plot(t, [np.mean(x) for x in fdata[m][:]], "k*", markersize=ms)
+            for patch in bplot['boxes']:
+                patch.set_facecolor(colors[i])
+        if m == "density":
+            ax.plot(t, fdata[m][:], "k*", markersize=ms)
+        ax.set_xlim([times[s][0], times[s][1]])
+        ax.set_ylim([-0.2, 0.75])
+        ax.set_ylabel(r"$\langle S_i \rangle$")
+        ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+        if i == len(ss) - 1:
+            ax.set_xlabel(f'time (d)')
+            ax.set_xticklabels(np.linspace(0, 300, 7, dtype=int))
+        else:
+            ax.set_xticklabels([])
 
-    # ------------------------------------------------------------------------------------------------------------------
-    # Run:
-    # ------------------------------------------------------------------------------------------------------------------
-
-    # Initialise arrays ................................................................................................
-
-    vals = []
-    time = []
-
-    with h5py.File(fname, mode='r') as fdata:
-
-        # Load data ....................................................................................................
-
-        lat = fdata["latitude"][:]
-        lon = fdata["longitude"][:]
-        nlat, nlon = len(lat), len(lon)
-        del lat, lon
-
-        keys_lags = {k for k in fdata.keys() if k.endswith("_lags")}
-        keys_data = set(fdata.keys()) - {"longitude", "latitude"} - keys_lags
-
-        # Iterate ......................................................................................................
-        with alive_bar(int(len(keys_data)), force_tty=True) as bar:
-            for k in sorted(keys_data)[0:1]:
-
-                # Load data ............................................................................................
-                am = fdata[k][:]  # get data
-                np.fill_diagonal(am, 0)  # take out diagonal
-                am = np.abs(am)  # take absolute value
-                am[np.abs(am) <= tau] = 0  # impose threshold
-
-                times = [int(s) for s in k.split('_') if s.isdigit()]  # get times
-                if len(times) > 2:
-                    time.append((times[0]+times[1])/2)
-                else:
-                    time.append(times[0])
-
-                # Measure and store ....................................................................................
-
-                # Strength
-                if measure == "strength" or measure == "in strength":
-                    net, _ = calc_strength(am, nlat, nlon)
-                    vals.append(net.reshape(-1))
-                elif measure == "out strength":
-                    _, net = calc_strength(am, nlat, nlon)
-                    vals.append(net.reshape(-1))
-                elif measure == "eigenvector":
-                    net = calc_eigenvector(am, nlat, nlon)
-                    vals.append(net.reshape(-1))
-                elif measure == "closeness":
-                    net = calc_closeness(am, nlat, nlon)
-                    vals.append(net.reshape(-1))
-                elif measure == "betweeness":
-                    net = calc_betweeness(am, nlat, nlon)
-                    vals.append(net.reshape(-1))
-                elif measure == "clustering":
-                    net = calc_clustering(am, nlat, nlon)
-                    vals.append(net.reshape(-1))
-                else:
-                    raise "Not recognised network measure."
-
-                # %% Update bar
-                bar()
-
-    with h5py.File(ofile, mode='a') as store:
-        store.create_dataset(measure, data=vals)
-        store.create_dataset(measure+"_t", data=time)
-
-#if __name__ == "__main__":
-
-#    args = docopt(__doc__)
-
-#    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], measure=args['<measure>'],
-#         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
-#         filename=args['<files>'], output=args['--output'])
-
-type = "corr"
-if type == "corr":
-    thresh = {100: 0.761, 200: 0.802, 400: 0.688, 600: 0.697, 800: 0.582, 1000: 0.802, 1200: 0.222}
-else:
-    thresh = {100: 0, 200: 0, 400: 0, 600: 0, 800: 0, 1000: 0, 1200: 0}
-
-ss = [600]
-for s in ss:
-    main(f"/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/CM_q_w25_s10_l0to0_1600_1900.h5",
-         f"/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/", "strength", tau=thresh[s])
+fig.suptitle(r"(c)")
+fig.subplots_adjust(left=0.16, right=0.95, top=0.94, bottom=0.075, hspace=0, wspace=0)
+plt.savefig("evol.png", dpi=300)

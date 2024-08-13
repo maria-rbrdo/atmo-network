@@ -92,7 +92,7 @@ def PCC(data, max_lag, min_lag=0):
 
 
 #%%
-def main(fpath, lmax, lmin=0, window_size=1, window_step=1, dsize=4):
+def main(fpath, lmax, lmin=0, window_size=1, window_step=1, dsize=2):
     """
         ==========================================================================================
         Parameters :
@@ -157,13 +157,13 @@ def main(fpath, lmax, lmin=0, window_size=1, window_step=1, dsize=4):
         isize = int(window_size / dt)  # iterations/slice
         istep = int(window_step / dt)  # iterations step
         if istep != 0:
-            nsteps = int((nt - isize)/istep)  # n steps
+            nsteps = int((nt - isize)/istep + 1)  # n steps
         else:
             nsteps = 1
         lmax = int(lmax/dt)  # max lag in iter
         lmin = int(lmin/dt)  # min lag in iter
 
-        print(f"* time segments cover: {nsteps*isize*dt} days from {tstart} to {tend}")
+        print(f"* time segments cover: {(nsteps-1)*istep*dt+isize*dt} days from {tstart} to {tend}")
 
         with h5py.File(opath, mode='a') as store:
             store.create_dataset("latitude", data=rlat)
@@ -209,7 +209,9 @@ def main(fpath, lmax, lmin=0, window_size=1, window_step=1, dsize=4):
 #         dsize=args['--dsize'])
 
 ss = [100, 200, 400, 600, 800, 1000, 1200]
-ss = [600]
-for s in ss:
-    main(f"/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/q_1000_2000", lmax=7,
-         window_size=1000, window_step=0, dsize=2)
+times = [(1700, 2000), (1700, 2000), (1200, 1500), (1600, 1900), (1150, 1450), (1450, 1750), (1700, 2000)]
+for i, s in enumerate(ss):
+    if i == 1:
+        print(s)
+        main(f"/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/q_{times[i][0]}_{times[i][1]}", lmax=0,
+             window_size=25, window_step=10, dsize=2)

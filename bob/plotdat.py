@@ -17,20 +17,20 @@ from alive_progress import alive_bar
 
 # Parameters for file and field selection ..............................................................................
 
-fld = 'q'           # Field to visualize
-it_start = 1650     # First iteration to plot
-it_end = 1650       # Last iteration to plot
-dt = 2              # Timestep
-res = 'T170'        # Resolution ('T2730', 'T1365', 'T682', 'T341', 'T170', 'T85', 'T42', 'T21')
-cstr = '0'          # Frequency parameter for job identification
-tsat = '600'        # Amplitude parameter for job identification
-levels = 250        # Levels graph
-lmin = -0.075          # Min level
-lmax = 0.075           # Max level
-ptype = "grid"      # Plot type: grid or individual plots
-prow = 5            # Plots per row
-mzav = False        # Subtract zonal average?
-new = False         # New or old labeling?
+fld = 'q'               # Field to visualize
+it_start = 1001         # First iteration to plot
+it_end = 1001           # Last iteration to plot
+dt = 1                  # Timestep
+res = 'T170'            # Resolution ('T2730', 'T1365', 'T682', 'T341', 'T170', 'T85', 'T42', 'T21')
+cstr = '0'              # Frequency parameter for job identification
+tsat = '600'            # Amplitude parameter for job identification
+levels = 250            # Levels graph
+lmin = 0                # Min level
+lmax = 1e-3             # Max level
+ptype = "grid"    # Plot type: grid or individual plots
+prow = 5                # Plots per row
+mzav = False            # Subtract zonal average?
+new = False             # New or old labeling?
 
 job = 'pv50-nu4-urlx' + '.c' + cstr + 'sat' + tsat + '.' + res    # Job name
 host = "localhost"   # localhost or remotehost
@@ -59,7 +59,7 @@ nlat = nlon // 2
 # Host .................................................................................................................
 
 if host == "localhost":
-    folder = os.path.join("/Volumes/Maria/dataloc/" + job + "/imgs/")
+    folder = os.path.join("/Volumes/Data/dataloc/" + job + "/imgs/")
     tmp = np.loadtxt(f'../../dataloc/grids/GRID.{res}', max_rows=(nlat // 2))
 elif host == "remotehost":
     folder = os.path.abspath("/home/reboredoprad/bob/dataloc/bb/swvac/" + job + "/imgs/")
@@ -90,11 +90,13 @@ if ptype == "individual":
     plt.rcParams.update({'font.size': 30})
     fig = plt.figure(figsize=(40, 30))
 elif ptype == "grid":
-    plt.rcParams.update({'font.size': 25})
+    #plt.rcParams.update({'font.size': 25})
+    plt.rcParams.update({'font.size': 60})
     fig = plt.figure(figsize=(30, 50))
     fig = plt.figure(figsize=(15, 6.4))
     norm = mpl.colors.Normalize(vmin=lmin, vmax=lmax)
-    sm = plt.cm.ScalarMappable(cmap=sns.color_palette("icefire", as_cmap=True), norm=norm)
+    #sm = plt.cm.ScalarMappable(cmap=sns.color_palette("Spectral_r", as_cmap=True), norm=norm)
+    sm = plt.cm.ScalarMappable(cmap=sns.cm.rocket, norm=norm)
 
 # Plot contours
 with alive_bar((it_end-it_start)//dt, force_tty=True) as bar:
@@ -129,21 +131,24 @@ with alive_bar((it_end-it_start)//dt, force_tty=True) as bar:
         hb = lambda lon, lat: A0 * np.sin(2 * lat) ** 2 * np.cos(2 * lon)
         X, Y = np.meshgrid(np.deg2rad(xs), np.deg2rad(ys))
         HB = hb(X, Y)
-        ax.contour(xs, ys, HB, colors='white', linewidths=1.25, transform=ccrs.PlateCarree())
+        # ax.contour(xs, ys, HB, colors='white', linewidths=1.25, transform=ccrs.PlateCarree())
         # ax.contour(xs, ys, qxy, 20, transform=ccrs.PlateCarree(), colors='black', linestyles="--")
 
         if ptype == "individual":
-            fig.colorbar(filled_c, orientation='vertical')
-            fig.suptitle(f"{it:04} days")
+            cbar = fig.colorbar(filled_c, orientation='vertical')
+            cbar.remove()
+            #fig.suptitle(f"{it:04} days")
             fig.savefig(f"{folder}/img{it:05}", dpi=200, bbox_inches='tight')
             fig.clear()
         # Update bar
         bar()
 
 if ptype == "grid":
-    cbar_ax = fig.add_axes([0.1, 0.15, 0.9, 0.05])
-    cbar = fig.colorbar(sm, cax=cbar_ax, orientation='horizontal', extend="both")
-    cbar.set_label(r"$k_i'^\mathrm{out} - k_i'^\mathrm{in}$ (unitless)")
+    #cbar_ax = fig.add_axes([0.1, 0.15, 0.9, 0.05])
+    #cbar = fig.colorbar(sm, cax=cbar_ax, orientation='horizontal', extend="both")
+    cbar_ax = fig.add_axes([0.1, 0.15, 0.05, 0.9])
+    cbar = fig.colorbar(sm, cax=cbar_ax, orientation='vertical', extend="both", format='%.0e')
+    cbar.set_label(r"$BC_i$")
     fig.subplots_adjust(wspace=0.1, hspace=0.1)
     fig.savefig(f"{folder}/{fld}_{it_start}_{it_end}", dpi=200, bbox_inches='tight')
     fig.clear()

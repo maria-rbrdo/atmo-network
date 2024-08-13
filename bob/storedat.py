@@ -15,16 +15,16 @@ from alive_progress import alive_bar
 
 # Parameters for file and field selection ..............................................................................
 
-fld = 'u'           # Field to visualize
-it_start = 1000     # First iteration
-it_end = 1015       # Last iteration
-dt = 0.2            # Timestep
+fld = 'q'           # Field to visualize
+it_start = 1600     # First iteration
+it_end = 1900       # Last iteration
+dt = 1              # Timestep
 res = 'T170'        # Resolution ('T2730', 'T1365', 'T682', 'T341', 'T170', 'T85', 'T42')
 cstr = '0'          # Frequency parameter for job identification
-tsat = '1000'       # Amplitude parameter for job identification
-new = True           # Old or new file
-tag = "_highres"
-nh = False           # Only northern hemisphere?
+tsat = '600'        # Amplitude parameter for job identification
+new = False         # Old or new file
+tag = ""
+nh = True           # Only northern hemisphere?
 
 job = 'pv50-nu4-urlx' + '.c' + cstr + 'sat' + tsat + '.' + res    # Job name
 
@@ -53,8 +53,8 @@ nlat = nlon // 2
 
 # Host .................................................................................................................
 if host == "localhost":
-    folder = os.path.join("/Volumes/Maria/dataloc/" + job + tag + "/netdata/")
-    file = os.path.join("/Volumes/Maria/dataloc/" + job + tag + "/netdata/" + f"{fld}_{it_start}_{it_end}")
+    folder = os.path.join("/Volumes/Data/dataloc/" + job + tag + "/netdata/")
+    file = os.path.join("/Volumes/Data/dataloc/" + job + tag + "/netdata/" + f"{fld}_{it_start}_{it_end}")
     tmp = np.loadtxt(f'../../dataloc/grids/GRID.{res}', max_rows=(nlat // 2))
 elif host == "remotehost":
     folder = os.path.abspath("/home/reboredoprad/bob/dataloc/bb/swvac/" + job + tag + "/netdata/")

@@ -81,7 +81,7 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
         elif ptype == "grid":
             figsize = (30, 50)
 
-        if measure == "strength":
+        if measure == "strength" or measure == "distance":
             fig_in = plt.figure(figsize=figsize)
             fig_out = plt.figure(figsize=figsize)
             fig_diff = plt.figure(figsize=figsize)
@@ -117,7 +117,7 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
             if extra_plots:
                 ax_distrib = fig_distrib.add_subplot(1, 1, 1)
                 ax_scatter = fig_scatter.add_subplot(1, 1, 1)
-            if measure == "strength":
+            if measure == "strength" or measure == "distance":
                 ax_in = fig_in.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
                 ax_out = fig_out.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
                 ax_diff = fig_diff.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
@@ -150,7 +150,7 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                         ax_scatter = fig_scatter.add_subplot(len(keys_data) // prow, prow, (it + 1))
                         ax_scatter.set_yticklabels([])
                         ax_scatter.set_xticklabels([])
-                    if measure == "strength":
+                    if measure == "strength" or measure == "distance":
                         ax_in = fig_in.add_subplot(len(keys_data) // prow, prow, (it + 1),
                                                    projection=ccrs.Orthographic(0, 90))
                         ax_out = fig_out.add_subplot(len(keys_data) // prow, prow, (it + 1),
@@ -192,11 +192,14 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
 
                 # Measure and plot .....................................................................................
                 print("Calculating...")
-                if measure == "strength":
+                if measure == "strength" or measure == "distance":
                     glon, glat = np.meshgrid(lon, lat)
-                    net, net_out = calc_strength(am, len(lat), len(lon), min_dist=0, max_dist=np.inf,
-                                                 latcorrected=False, lat=glat.reshape(-1), lon=glon.reshape(-1))
 
+                    if measure == "strength":
+                        net, net_out = calc_strength(am, len(lat), len(lon), min_dist=0, max_dist=np.inf,
+                                                     latcorrected=False, lat=glat.reshape(-1), lon=glon.reshape(-1))
+                    else:
+                        net, net_out = calc_distance(am, len(lat), len(lon), lat=glat.reshape(-1), lon=glon.reshape(-1))
                     print(np.max(net))
                     # generate plot
                     plot_matrix(ax_out, net_out, lat, lon, min=0, max=lmax, levels=50)
@@ -216,11 +219,12 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                     plot_matrix(ax_in, net, lon, lat, min=0, max=lmax)
                     plot_matrix(ax_out, -net_out, lon, lat, min=0, max=lmax)
 
-                else:  # measures: strength, clustering, closeness, betweeness, eigenvector
+                else:
                     function = getattr(netprop, 'calc_' + measure)
                     net = function(am, len(lat), len(lon))
+                    print(np.min(net), np.mean(net), np.max(net))
                     # generate plot
-                    plot_matrix(ax, net, lat, lon)
+                    plot_matrix(ax, net, lat, lon, levels=150, min=0, max=lmax)
 
                 # Save fig .............................................................................................
 
@@ -233,7 +237,7 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                         fig_scatter.savefig(savename_scatter, dpi=200, bbox_inches='tight')
                         ax_distrib.cla()
 
-                    if measure == "strength":
+                    if measure == "strength" or measure == "distance":
                         cbar_ax_in = fig_in.add_axes([0.93, 0.15, 0.02, 0.7])
                         cbar_ax_out = fig_out.add_axes([0.93, 0.15, 0.02, 0.7])
                         cbar_ax_diff = fig_diff.add_axes([0.93, 0.15, 0.02, 0.7])
@@ -246,7 +250,8 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
 
                         cbar_out = fig_out.colorbar(sm_out, cax=cbar_ax_out, orientation='vertical', extend='both')
                         cbar_out.formatter.set_powerlimits((0, 0))
-                        fig_out.suptitle(f"out strength centrality")
+                        cbar_out.remove()
+                        #fig_out.suptitle(f"out strength centrality")
                         fig_out.savefig(savename_out, dpi=200, bbox_inches='tight')
                         ax_out.cla()
 
@@ -272,8 +277,9 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                     else:
                         cbar_ax = fig.add_axes([0.93, 0.15, 0.02, 0.7])
 
-                        fig.colorbar(sm, cax=cbar_ax, orientation='vertical', extend='both')
-                        fig.suptitle(f"{measure}")
+                        cbar = fig.colorbar(sm, cax=cbar_ax, orientation='vertical', extend='both')
+                        cbar.remove()
+                        #fig.suptitle(f"{measure}")
                         fig.savefig(savename, dpi=200, bbox_inches='tight')
                         ax.cla()
 
@@ -291,7 +297,7 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                 fig_scatter.subplots_adjust(wspace=0.1, hspace=0.1)
                 fig_scatter.savefig(opath + oname + "scatter", dpi=200, bbox_inches='tight')
 
-            if measure == "strength":
+            if measure == "strength" or measure == "distance":
                 cbar_ax_in = fig_in.add_axes([0.93, 0.15, 0.02, 0.7])
                 cbar_ax_out = fig_out.add_axes([0.93, 0.15, 0.02, 0.7])
                 cbar_ax_diff = fig_diff.add_axes([0.93, 0.15, 0.02, 0.7])
@@ -341,13 +347,14 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
 #         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
 #         filename=args['<files>'], output=args['--output'])
 
-ss = [600]
-thresh = {100: 0.761, 200: 0.802, 400: 0.688, 600: 0.697, 800: 0.582, 1000: 0.802, 1200: 0.222}
+ss = [100, 200, 400, 600, 800, 1000, 1200]
+thresh = {100: 0.455, 200: 0.837, 400: 0.324, 600: 0.373, 800: 0.331, 1000: 0.599, 1200: 0.109}
+measures = ["strength", "closeness", "betweenness", "distance"]
 for s in ss:
     # f"/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/VM_1600_1900.h5"
-    main(f"/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/CM_q_w25_s10_l0to7_1600_1900.h5",
-         f"/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/", "strength", thresh[s],
-         extra_plots=False, ptype="individual", prow=5, lmin=-0.075, lmax=0.075)
+    main(f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_s1_l0to0_1000_2000.h5",
+         f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/", measures[3], thresh[s],
+         extra_plots=False, ptype="individual", prow=5, lmin=-1e3, lmax=1e3)
     #main(f"../../../dataloc/netcdf/netdata/VM.h5",
     #     f"../../../dataloc/netcdf/netdata/", "strength", 0,
     #     extra_plots=True, ptype="grid", prow=5, lmin=-3e11, lmax=3e11)

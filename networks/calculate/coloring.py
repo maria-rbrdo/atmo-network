@@ -6,6 +6,7 @@ import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 
 from alive_progress import alive_bar
+from sklearn.cluster import AgglomerativeClustering
 
 def find_split(A, n):
 
@@ -16,16 +17,20 @@ def find_split(A, n):
 
     # eigenvalues
     #l1, x1 = sp.linalg.eigs(DinvL, subset_by_index=[A.shape[0] - n, A.shape[0] - 1])
-    l, x = sp.linalg.eigh(L, D, subset_by_index=[A.shape[0] - n, A.shape[0] - 1])
-    x = np.flip(x, axis=1)  # decreasing order
+    l, X = sp.linalg.eigh(L, D, subset_by_index=[A.shape[0] - n, A.shape[0] - 1])
+    X = np.flip(X, axis=1)  # decreasing order
 
     # split
-    s = np.sign(x - np.mean(x, axis=0)).astype(int)
-    s[s == 0] = 1 if np.random.rand() < 0.5 else -1
-    s[s == -1] = 0
+    #s = np.sign(x - np.mean(x, axis=0)).astype(int)
+    #s[s == 0] = 1 if np.random.rand() < 0.5 else -1
+    #s[s == -1] = 0
+    S = np.zeros_like(X)
+    for i, x in enumerate(X.T):
+        clustering = AgglomerativeClustering().fit(x.reshape(-1, 1))
+        S[:, i] = clustering.labels_
 
     # from binary to int
-    s = np.array([''.join(s[i, :].astype('str')) for i in range(A.shape[0])])
+    s = np.array([''.join(S[i, :].astype('int').astype('str')) for i in range(A.shape[0])])
 
     return s
 
@@ -38,7 +43,7 @@ def create_subplot(fig, position, title, projection=ccrs.Orthographic(0, 60), sp
     return ax
 
 sph = True
-with h5py.File("/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat600.T170_highres/netdata/DM_1772_1782.h5", mode='r') as f:
+with h5py.File("/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat200.T170_highres/netdata/DM_1100_1115.h5", mode='r') as f:
 #with h5py.File("/Users/mariareboredoprado/Desktop/Trinity/dataloc/quadgyre/netdata/TM.h5", mode='r') as f:
     print("Getting coordinates...")
     coord = f["coord"][:]
@@ -86,7 +91,6 @@ with h5py.File("/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat600.T170_highres/netda
         for n in range(coord.shape[0]):
             branch = s[n]
             color = color_dict[branch]
-
             ax_list = [ax_all]
             if branch[0] == "0":
                 ax_list.append(ax_0)
@@ -119,9 +123,9 @@ with h5py.File("/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat600.T170_highres/netda
 
             for ax in ax_list:
                 if sph:
-                    ax.scatter(coord[n, 1, -1], coord[n, 0, 0], c=color, marker="*", s=2, transform=ccrs.Geodetic())
-                    ax.scatter(coord[n, 1, 0], coord[n, 0, 0], c=color, marker="o", s=2, transform=ccrs.Geodetic())
-                    ax.plot(coord[n, 1, :], coord[n, 0, :], "-", color=color, alpha=0.25, transform=ccrs.Geodetic())
+                    #ax.scatter(coord[n, 1, -1], coord[n, 0, 0], c=color, marker="*", s=10, transform=ccrs.Geodetic())
+                    ax.scatter(coord[n, 1, 0], coord[n, 0, 0], c=color, marker="o", s=10, transform=ccrs.Geodetic())
+                    ax.plot(coord[n, 1, :], coord[n, 0, :], "-", color=color, alpha=0.25, transform=ccrs.Geodetic(), linewidth=2)
                 else:
                     ax.scatter(coord[n, 1, -1], coord[n, 0, 0], c=color, marker="*", s=1)
                     ax.scatter(coord[n, 1, 0], coord[n, 0, 0], c=color, marker="o", s=1)
