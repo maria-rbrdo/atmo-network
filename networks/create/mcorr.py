@@ -208,10 +208,9 @@ def main(fpath, lmax, lmin=0, window_size=1, window_step=1, dsize=2):
 #    main(fpath=args['<files>'], lmax=int(args['<lmax>']), lmin=int(args['--lmin']), segments=int(args['--segments']),
 #         dsize=args['--dsize'])
 
-ss = [100, 200, 400, 600, 800, 1000, 1200]
-times = [(1700, 2000), (1700, 2000), (1200, 1500), (1600, 1900), (1150, 1450), (1450, 1750), (1700, 2000)]
+ss = [200]
+times = {100: (1700, 2000), 200: (1000, 1300), 400: (1200, 1500), 600: (1600, 1900), 800: (1150, 1450), 1000: (1450, 1750), 1200: (1700, 2000)}
 for i, s in enumerate(ss):
-    if i == 1:
-        print(s)
-        main(f"/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/q_{times[i][0]}_{times[i][1]}", lmax=0,
-             window_size=25, window_step=10, dsize=2)
+    print(f"* {s}:")
+    main(f"/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/q_{times[s][0]}_{times[s][1]}", lmax=0,
+         window_size=25, window_step=10, dsize=2)

@@ -20,24 +20,27 @@ from networks.plot.plot import *
 
 thresh = np.linspace(0, 1, 25)
 ss = [100, 200, 400, 600, 800, 1000, 1200]
+mm = ["density", "clustering", "strength", "closeness", "betweenness"]
 times = {100: (1700, 2000), 200: (1700, 2000), 400: (1200, 1500), 600: (1600, 1900), 800: (1150, 1450), 1000: (1450, 1750), 1200: (1700, 2000)}
-m = "density"
 colors = ["tomato", "orange", "mediumseagreen", "darkturquoise", "cornflowerblue", "mediumslateblue", "orchid"]
+
+# s = 600
+m = "density"
 
 lmax = 0
 window_size = 25
 window_step = 10
-dsize = 2
 
 pdata = {}
 
 for s in ss:
+#for m in mm:
 
     A0 = s / 600 * 0.15
     print(f"* {A0:04.3f}, {m}:")
 
     with h5py.File(f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w{window_size}_s{window_step}_l0to{lmax}_{times[s][0]}_{times[s][1]}.h5", mode='r') as f:
-
+    #with h5py.File(f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_s1_l0to0_1000_2000.h5", mode='r') as f:
         lat = f["latitude"][:]
         lon = f["longitude"][:]
         nlat, nlon = len(lat), len(lon)
@@ -65,8 +68,6 @@ for s in ss:
                         net, _ = calc_strength(am, nlat, nlon)
                     elif m == "out_strength":
                         _, net = calc_strength(am, nlat, nlon)
-                    elif m == "eigenvector":
-                        net = calc_eigenvector(am, nlat, nlon)
                     elif m == "closeness":
                         net = calc_closeness(am, nlat, nlon)
                     elif m == "betweenness":
@@ -79,9 +80,9 @@ for s in ss:
                         raise "Not recognised network measure."
 
                     #print("Saving...")
-                    try:
-                        kdata.append(net.reshape(-1))
-                    except:
+                    if isinstance(net, np.ndarray):
+                        kdata.append(np.random.choice(net.reshape(-1), size=len(net.reshape(-1)) // (2 ** 7)))
+                    else:
                         kdata.append(net)
 
                     bar()
@@ -90,28 +91,19 @@ for s in ss:
         tdata = [[tdata[i, :].tolist() for i in range(tdata.shape[0])]]
         pdata[A0] = tdata
 
-with open("pdata.pickle", "wb") as fpickle:
-    pickle.dump(pdata, fpickle)
-
 plt.rcParams.update({'font.size': 30})
 fig, ax = plt.subplots(figsize=(11, 12))
 plt.hlines(0.1, 0, 1, colors="black", linestyles="--", linewidth=5, label=r"$\rho_\tau$")
 for i, k in enumerate(pdata.keys()):
     # threshold
     mean = [np.mean(x) for x in pdata[k][0]]
-    cs = CubicSpline(np.flip(thresh), np.flip(mean))
+    cs = CubicSpline(np.flip(mean), np.flip(thresh))
     tau = cs(0.1)
     print(f"{k:04.3f}:{tau:04.3f}")
-
     # line
-    ax.plot(thresh, mean, color=colors[i], linewidth=1.5)
-    # boxplot
-    bplot = ax.boxplot(pdata[k][0], positions=thresh, showfliers=False, widths=0.02, patch_artist=True, manage_ticks=False,
-                       boxprops=dict(linewidth=2.5), whiskerprops=dict(linewidth=2.5), medianprops=dict(color="black"))
-    ax.plot(thresh, mean, "k*", markersize=12)
+    ax.plot(thresh, mean, color=colors[i], linewidth=5, label=f"{float(k):04.3f}H") #
     # threshold
     plt.plot(tau, 0.1, "o", markersize=20, color=colors[i])
-
 box = ax.get_position()
 ax.set_position([box.x0+0.01, box.y0 + box.height * 0.18,
                  box.width, box.height * 0.9])
@@ -121,6 +113,5 @@ ax.set_xlabel(r'$\tau$')
 ax.set_ylabel(r'$\rho$')
 ax.set_yscale('log')
 ax.set_xlim(0, 1)
-ax.set_title(r"(c)")
 
 plt.savefig("rhotau.png", dpi=200)

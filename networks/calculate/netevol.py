@@ -56,7 +56,6 @@ def main(fname, opath, measure, tau=0):
         lat = fdata["latitude"][:]
         lon = fdata["longitude"][:]
         nlat, nlon = len(lat), len(lon)
-        del lat, lon
 
         keys_lags = {k for k in fdata.keys() if k.endswith("_lags")}
         keys_data = set(fdata.keys()) - {"longitude", "latitude"} - keys_lags
@@ -95,6 +94,15 @@ def main(fname, opath, measure, tau=0):
                 elif measure == "betweenness":
                     net = calc_betweenness(am, nlat, nlon)
                     vals.append(net.reshape(-1))
+                elif measure == "distance" or measure == "in_distance":
+                    glon, glat = np.meshgrid(lon, lat)
+                    glon, glat = glon.reshape(-1), glat.reshape(-1)
+                    net, _ = calc_distance(am, nlat, nlon, glat, glon)
+                    vals.append(net.reshape(-1))
+                elif measure == "out_distance":
+                    glon, glat = np.meshgrid(lon, lat)
+                    _, net = calc_distance(am, nlat, nlon, glat.reshape(-1), glon.reshape(-1))
+                    vals.append(net.reshape(-1))
                 elif measure == "clustering":
                     val = calc_clustering(am)
                     vals.append(val)
@@ -125,31 +133,36 @@ def main(fname, opath, measure, tau=0):
 
 
 
-type = "window_zero"  # CHECK
-measures = ["density", "clustering", "strength", "closeness", "betweenness"]
-s = 600
-
+type = "vort"  # CHECK
+measures = ["in_distance", "out_distance"]
 ss = [100, 200, 400, 600, 800, 1000, 1200]
-times = {100: (1700, 2000), 200: (1700, 2000), 400: (1200, 1500), 600: (1600, 1900), 800: (1150, 1450), 1000: (1450, 1750), 1200: (1700, 2000)}
-if type == "all_zero":  # rho = 0.1
+
+if type == "1000_zero":  # rho = 0.1
     thresh = {100: 0.455, 200: 0.837, 400: 0.324, 600: 0.373, 800: 0.331, 1000: 0.599, 1200: 0.109}
+    times = {100: (1000, 2000), 200: (1000, 2000), 400: (1000, 2000), 600: (1000, 2000), 800: (1000, 2000),
+             1000: (1000, 2000), 1200: (1000, 2000)}
+elif type == "1000_lagged":
+    thresh = {100: 0.505, 200: 0.787, 400: 0.267, 600: 0.293, 800: 0.274, 1000: 0.458, 1200: 0.155}
+    times = {100: (1000, 2000), 200: (1000, 2000), 400: (1000, 2000), 600: (1000, 2000), 800: (1000, 2000),
+             1000: (1000, 2000), 1200: (1000, 2000)}
 elif type == "window_zero":  # rho = 0.05
     thresh = {100: 0.695, 200: 0.751, 400: 0.601, 600: 0.526, 800: 0.542, 1000: 0.597, 1200: 0.508}
+    times = {100: (1700, 2000), 200: (1700, 2000), 400: (1200, 1500), 600: (1600, 1900), 800: (1150, 1450),
+             1000: (1450, 1750), 1200: (1700, 2000)}
+elif type == "window_lagged":
+    thresh = {}
+    times = {100: (1700, 2000), 200: (1700, 2000), 400: (1200, 1500), 600: (1600, 1900), 800: (1150, 1450),
+             1000: (1450, 1750), 1200: (1700, 2000)}
 elif type == "vort":
     thresh = {100: 0, 200: 0, 400: 0, 600: 0, 800: 0, 1000: 0, 1200: 0}
+    times = {100: (1965, 2000), 200: (1965, 2000), 400: (1325, 1360), 600: (1855, 1890), 800: (1185, 1220),
+             1000: (1515, 1550), 1200: (1965, 2000)}
 
 for s in ss:
     print(f"* {s}:")
-    if s == 100:
-        print(f"** betweenness:")
-        main(f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w25_s10_l0to0_{times[s][0]}_{times[s][1]}.h5",
-             f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/", "betweenness", tau=thresh[s])
-    else:
-        for m in measures:
-            print(f"** {m}:")
-            main(f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w25_s10_l0to0_{times[s][0]}_{times[s][1]}.h5",
-                 f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/", m, tau=thresh[s])
-#for i, s in enumerate(ss):
-#    main(f"/home/reboredoprad/bob/dataloc/bb/swvac/pv50-nu4-urlx.c0sat{s}.T170/netdata/q_{times[i][0]}_{times[i][1]}",
-#         f"/home/reboredoprad/bob/dataloc/bb/swvac/pv50-nu4-urlx.c0sat{s}.T170/netdata/", "betweenness",
-#         tau=thresh[s])
+    for m in measures:
+        print(f"** {m}:")
+        #main(f"/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/CM_q_w25_s10_l0to7_{times[s][0]}_{times[s][1]}.h5",
+        #     f"/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/", m, tau=thresh[s])
+        main(f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/VM_{times[s][0]}_{times[s][1]}.h5",
+             f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/", m, tau=thresh[s])

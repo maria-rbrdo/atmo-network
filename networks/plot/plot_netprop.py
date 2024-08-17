@@ -93,20 +93,10 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
             sm_in = plt.cm.ScalarMappable(cmap=sns.cm.mako, norm=norm_in)
             sm_out = plt.cm.ScalarMappable(cmap=sns.cm.rocket, norm=norm_out)
             sm_diff = plt.cm.ScalarMappable(cmap=sns.color_palette("icefire", as_cmap=True), norm=norm_diff)
-        elif measure == "average_connections":
-            fig_in = plt.figure(figsize=figsize)
-            fig_out = plt.figure(figsize=figsize)
-
-            norm_out = mpl.colors.Normalize(vmin=0, vmax=lmax)
-            norm_in = mpl.colors.Normalize(vmin=0, vmax=np.abs(lmin))
-
-            sm_out = plt.cm.ScalarMappable(cmap=sns.cm.rocket, norm=norm_out)
-            sm_in = plt.cm.ScalarMappable(cmap=sns.cm.mako, norm=norm_in)
         else:
             fig = plt.figure(figsize=figsize)
             norm = mpl.colors.Normalize(vmin=0, vmax=lmax)
             sm = plt.cm.ScalarMappable(cmap=sns.cm.rocket, norm=norm)
-
         if extra_plots:
             fig_distrib = plt.figure(figsize=figsize)
             fig_scatter = plt.figure(figsize=figsize)
@@ -124,11 +114,6 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                 ax_in.set_global()
                 ax_out.set_global()
                 ax_diff.set_global()
-            elif measure == "average_connections":
-                ax_in = fig_in.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
-                ax_out = fig_out.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
-                ax_in.set_global()
-                ax_out.set_global()
             else:
                 ax = fig.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
                 ax.set_global()
@@ -160,13 +145,6 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                         ax_in.set_global()
                         ax_out.set_global()
                         ax_diff.set_global()
-                    elif measure == "average_connections":
-                        ax_in = fig_in.add_subplot(len(keys_data) // prow, prow, (it + 1),
-                                                   projection=ccrs.Orthographic(0, 90))
-                        ax_out = fig_out.add_subplot(len(keys_data) // prow, prow, (it + 1),
-                                                     projection=ccrs.Orthographic(0, 90))
-                        ax_in.set_global()
-                        ax_out.set_global()
                     else:
                         ax = fig.add_subplot(len(keys_data) // prow, prow, (it + 1),
                                              projection=ccrs.Orthographic(0, 90))
@@ -205,26 +183,19 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                     plot_matrix(ax_out, net_out, lat, lon, min=0, max=lmax, levels=50)
                     if not np.all(np.round(net,10) == np.round(net_out,10)):
                         plot_matrix(ax_in, -net, lat, lon, min=0, max=lmax, levels=50)
-                        plot_matrix(ax_diff, net_out-net, lat, lon, min=lmin, max=lmax, levels=250)
+                        plot_matrix(ax_diff, net_out-net, lat, lon, min=lmin, max=lmax, levels=50)
 
                     if extra_plots is True:
                         plot_cumsum(ax_distrib, [net, net_out], ["in strength", "out strength"], lmax,
                                     ptype, colors=["tab:blue", "tab:red"])
                         plot_scatter(ax_scatter, [net, net_out], ["in strength", "out strength"], lmax,
                                      ptype)
-
-                elif measure == "average_connections":
-                    net, net_out = calc_average_connections(am, len(lat), len(lon), min_dist=0, max_dist=np.inf)
-                    # generate plot
-                    plot_matrix(ax_in, net, lon, lat, min=0, max=lmax)
-                    plot_matrix(ax_out, -net_out, lon, lat, min=0, max=lmax)
-
                 else:
                     function = getattr(netprop, 'calc_' + measure)
                     net = function(am, len(lat), len(lon))
                     print(np.min(net), np.mean(net), np.max(net))
                     # generate plot
-                    plot_matrix(ax, net, lat, lon, levels=150, min=0, max=lmax)
+                    plot_matrix(ax, net, lat, lon, levels=50, min=0, max=lmax)
 
                 # Save fig .............................................................................................
 
@@ -257,23 +228,11 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
 
                         cbar_diff = fig_diff.colorbar(sm_diff, cax=cbar_ax_diff, orientation='vertical', extend='both')
                         cbar_diff.formatter.set_powerlimits((0, 0))
-                        fig_diff.suptitle(f"(in-out) strength centrality")
+                        cbar_diff.remove()
+                        #fig_diff.suptitle(f"(in-out) strength centrality")
                         fig_diff.savefig(savename_diff, dpi=200, bbox_inches='tight')
                         ax_diff.cla()
 
-                    elif measure == "average_connections":
-                        cbar_ax_in = fig_in.add_axes([0.93, 0.15, 0.02, 0.7])
-                        cbar_ax_out = fig_out.add_axes([0.93, 0.15, 0.02, 0.7])
-
-                        fig_in.colorbar(sm_in, cax=cbar_ax_in, orientation='vertical', extend='both')
-                        fig_in.suptitle(f"average number of in-links")
-                        fig_in.savefig(savename_in, dpi=200, bbox_inches='tight')
-                        ax_in.cla()
-
-                        fig_out.colorbar(sm_out, cax=cbar_ax_out, orientation='vertical', extend='both')
-                        fig_out.suptitle(f"average number of out-links")
-                        fig_out.savefig(savename_out, dpi=200, bbox_inches='tight')
-                        ax_out.cla()
                     else:
                         cbar_ax = fig.add_axes([0.93, 0.15, 0.02, 0.7])
 
@@ -317,21 +276,6 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                 fig_diff.subplots_adjust(wspace=0.1, hspace=0.1)
                 fig_diff.savefig(opath + oname + "grid_diff", dpi=200, bbox_inches='tight')
 
-            elif measure == "average_connections":
-                cbar_ax_in = fig_in.add_axes([0.93, 0.15, 0.02, 0.7])
-                cbar_ax_out = fig_out.add_axes([0.93, 0.15, 0.02, 0.7])
-
-                cbar_in = fig_in.colorbar(sm_in, cax=cbar_ax_in, orientation='vertical')
-                cbar_in.formatter.set_powerlimits((0, 0))
-                fig_in.subplots_adjust(wspace=0.1, hspace=0.1)
-                fig_in.savefig(opath + oname + "grid_in", dpi=200, bbox_inches='tight')
-
-                cbar_out = fig_out.colorbar(sm_out, cax=cbar_ax_out, orientation='vertical')
-                cbar_out.formatter.set_powerlimits((0, 0))
-                fig_out.subplots_adjust(wspace=0.1, hspace=0.1)
-                fig_out.savefig(opath + oname + "grid_out", dpi=200, bbox_inches='tight')
-                fig_out.cla()
-
             else:
                 cbar_ax = fig.add_axes([0.93, 0.15, 0.02, 0.7])
                 cbar = fig.colorbar(sm, cax=cbar_ax, orientation='vertical')
@@ -339,22 +283,29 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                 fig.subplots_adjust(wspace=0.1, hspace=0.1)
                 fig.savefig(opath + oname + "grid", dpi=200, bbox_inches='tight')
 
-#if __name__ == "__main__":
-
-#    args = docopt(__doc__)
-
-#    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], measure=args['<measure>'],
-#         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
-#         filename=args['<files>'], output=args['--output'])
-
 ss = [100, 200, 400, 600, 800, 1000, 1200]
-thresh = {100: 0.455, 200: 0.837, 400: 0.324, 600: 0.373, 800: 0.331, 1000: 0.599, 1200: 0.109}
+type = "1000_zero"
+if type == "1000_zero": # rho = 0.1
+    thresh = {100: 0.455, 200: 0.837, 400: 0.324, 600: 0.373, 800: 0.331, 1000: 0.599, 1200: 0.109}
+elif type == "1000_lagged":  # rho = 0.1
+    thresh = {100: 0.505, 200: 0.787, 400: 0.267, 600: 0.293, 800: 0.274, 1000: 0.458, 1200: 0.155}
+elif type == "window_zero":  # rho = 0.05
+    thresh = {100: 0.695, 200: 0.751, 400: 0.601, 600: 0.526, 800: 0.542, 1000: 0.597, 1200: 0.508}
+elif type == "window_lagged":
+    thresh = {}
+elif type == "vort":
+    thresh = {100: 0, 200: 0, 400: 0, 600: 0, 800: 0, 1000: 0, 1200: 0}
+
 measures = ["strength", "closeness", "betweenness", "distance"]
+
 for s in ss:
     # f"/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/VM_1600_1900.h5"
+    # f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w1000_s0_l7to0_1000_2000.h5"
     main(f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_s1_l0to0_1000_2000.h5",
-         f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/", measures[3], thresh[s],
-         extra_plots=False, ptype="individual", prow=5, lmin=-1e3, lmax=1e3)
+         f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/", "closeness", thresh[s],
+         extra_plots=False, ptype="individual", prow=5, lmin=-5e6, lmax=5e6)
+
+    # 1e-1
     #main(f"../../../dataloc/netcdf/netdata/VM.h5",
     #     f"../../../dataloc/netcdf/netdata/", "strength", 0,
     #     extra_plots=True, ptype="grid", prow=5, lmin=-3e11, lmax=3e11)

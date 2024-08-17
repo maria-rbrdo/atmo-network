@@ -17,17 +17,18 @@ from alive_progress import alive_bar
 
 # Parameters for file and field selection ..............................................................................
 
-fld = 'q'               # Field to visualize
-it_start = 1001         # First iteration to plot
-it_end = 1001           # Last iteration to plot
+fld = 'h'               # Field to visualize
+it_start = 1239         # First iteration to plot
+it_end = 1239           # Last iteration to plot
 dt = 1                  # Timestep
 res = 'T170'            # Resolution ('T2730', 'T1365', 'T682', 'T341', 'T170', 'T85', 'T42', 'T21')
 cstr = '0'              # Frequency parameter for job identification
 tsat = '600'            # Amplitude parameter for job identification
 levels = 250            # Levels graph
-lmin = 0                # Min level
-lmax = 1e-3             # Max level
-ptype = "grid"    # Plot type: grid or individual plots
+N = 16384
+lmin = 0               # Min level
+lmax = 5e6              # Max level
+ptype = "grid"          # Plot type: grid or individual plots
 prow = 5                # Plots per row
 mzav = False            # Subtract zonal average?
 new = False             # New or old labeling?
@@ -148,7 +149,7 @@ if ptype == "grid":
     #cbar = fig.colorbar(sm, cax=cbar_ax, orientation='horizontal', extend="both")
     cbar_ax = fig.add_axes([0.1, 0.15, 0.05, 0.9])
     cbar = fig.colorbar(sm, cax=cbar_ax, orientation='vertical', extend="both", format='%.0e')
-    cbar.set_label(r"$BC_i$")
+    cbar.set_label(r"$\tilde{D}_i$")
     fig.subplots_adjust(wspace=0.1, hspace=0.1)
     fig.savefig(f"{folder}/{fld}_{it_start}_{it_end}", dpi=200, bbox_inches='tight')
     fig.clear()

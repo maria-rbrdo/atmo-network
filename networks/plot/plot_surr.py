@@ -84,7 +84,7 @@ lmax = 7
 window_size = 25
 window_step = 10
 nsurr = 5
-dsize = 2
+dsize = 3
 
 plot_data = []
 a = []

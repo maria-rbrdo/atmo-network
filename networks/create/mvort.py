@@ -194,7 +194,8 @@ def main(fpath, dsize=4):
 #    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], segments=int(args['--segments']),
 #         lag=int(args['--lag']), filename=args['<files>'], output=args['--output'])
 
-ss = [600]
+ss = [1000, 1200]
+times = {100: (1965, 2000), 200: (1965, 2000), 400: (1325, 1360), 600: (1855, 1890), 800: (1185, 1220), 1000: (1515, 1550), 1200: (1965, 2000)}
 for s in ss:
-    main(f"/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/z_1750_1800", dsize=2)
+    main(f"/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/z_{times[s][0]}_{times[s][1]}", dsize=2)
     #main(f"/Volumes/Maria/dataloc/netcdf/netdata/data", dsize=4)
