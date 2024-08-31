@@ -18,18 +18,18 @@ from scipy.interpolate import CubicSpline
 from networks.calculate.netprop import *
 from networks.plot.plot import *
 
-thresh = np.linspace(0, 1, 25)
+thresh = np.linspace(0, 1, 50)
 ss = [100, 200, 400, 600, 800, 1000, 1200]
 mm = ["density", "clustering", "strength", "closeness", "betweenness"]
 times = {100: (1700, 2000), 200: (1700, 2000), 400: (1200, 1500), 600: (1600, 1900), 800: (1150, 1450), 1000: (1450, 1750), 1200: (1700, 2000)}
 colors = ["tomato", "orange", "mediumseagreen", "darkturquoise", "cornflowerblue", "mediumslateblue", "orchid"]
 
-# s = 600
+#s = 600
 m = "density"
 
-lmax = 0
-window_size = 25
-window_step = 10
+lmax = 7
+window_size = 1000
+window_step = 0
 
 pdata = {}
 
@@ -39,7 +39,7 @@ for s in ss:
     A0 = s / 600 * 0.15
     print(f"* {A0:04.3f}, {m}:")
 
-    with h5py.File(f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w{window_size}_s{window_step}_l0to{lmax}_{times[s][0]}_{times[s][1]}.h5", mode='r') as f:
+    with h5py.File(f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w{window_size}_s{window_step}_l0to{lmax}_1000_2000.h5", mode='r') as f:
     #with h5py.File(f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_s1_l0to0_1000_2000.h5", mode='r') as f:
         lat = f["latitude"][:]
         lon = f["longitude"][:]
@@ -81,7 +81,7 @@ for s in ss:
 
                     #print("Saving...")
                     if isinstance(net, np.ndarray):
-                        kdata.append(np.random.choice(net.reshape(-1), size=len(net.reshape(-1)) // (2 ** 7)))
+                        kdata.append(net.reshape(-1))
                     else:
                         kdata.append(net)
 
@@ -97,6 +97,7 @@ plt.hlines(0.1, 0, 1, colors="black", linestyles="--", linewidth=5, label=r"$\rh
 for i, k in enumerate(pdata.keys()):
     # threshold
     mean = [np.mean(x) for x in pdata[k][0]]
+    #mean = pdata[k]
     cs = CubicSpline(np.flip(mean), np.flip(thresh))
     tau = cs(0.1)
     print(f"{k:04.3f}:{tau:04.3f}")

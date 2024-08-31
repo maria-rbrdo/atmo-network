@@ -116,7 +116,7 @@ ax.set_ylim([-90, 90])
 ax.set_xlim([-0.02, 0.12])
 ax.set_title("(e)")
 ax.set_yticklabels([])
-ax.set_xlabel(r"$r$ (days$^{-1}$)", labelpad=15)
+ax.set_xlabel(r"$r$ (d$^{-1}$)", labelpad=15)
 fig.subplots_adjust(left=0.07, right=0.95, top=0.9, bottom=0.2, wspace=0)
 
 fig.savefig("settings.png", dpi=300)

@@ -90,7 +90,7 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
             norm_in = mpl.colors.Normalize(vmin=0, vmax=np.abs(lmin))
             norm_diff = mpl.colors.Normalize(vmin=lmin, vmax=lmax)
 
-            sm_in = plt.cm.ScalarMappable(cmap=sns.cm.mako, norm=norm_in)
+            sm_in = plt.cm.ScalarMappable(cmap=sns.cm.rocket, norm=norm_in)
             sm_out = plt.cm.ScalarMappable(cmap=sns.cm.rocket, norm=norm_out)
             sm_diff = plt.cm.ScalarMappable(cmap=sns.color_palette("icefire", as_cmap=True), norm=norm_diff)
         else:
@@ -182,7 +182,7 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                     # generate plot
                     plot_matrix(ax_out, net_out, lat, lon, min=0, max=lmax, levels=50)
                     if not np.all(np.round(net,10) == np.round(net_out,10)):
-                        plot_matrix(ax_in, -net, lat, lon, min=0, max=lmax, levels=50)
+                        plot_matrix(ax_in, net, lat, lon, min=0, max=lmax, levels=50)
                         plot_matrix(ax_diff, net_out-net, lat, lon, min=lmin, max=lmax, levels=50)
 
                     if extra_plots is True:
@@ -195,7 +195,7 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                     net = function(am, len(lat), len(lon))
                     print(np.min(net), np.mean(net), np.max(net))
                     # generate plot
-                    plot_matrix(ax, net, lat, lon, levels=50, min=0, max=lmax)
+                    plot_matrix(ax, net, lat, lon, levels=50, min=0, max=lmax, my_cmap=sns.cm.rocket)
 
                 # Save fig .............................................................................................
 
@@ -215,7 +215,8 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
 
                         cbar_in = fig_in.colorbar(sm_in, cax=cbar_ax_in, orientation='vertical', extend='both')
                         cbar_in.formatter.set_powerlimits((0, 0))
-                        fig_in.suptitle(f"in strength centrality")
+                        cbar_in.remove()
+                        #fig_in.suptitle(f"in strength centrality")
                         fig_in.savefig(savename_in, dpi=200, bbox_inches='tight')
                         ax_in.cla()
 
@@ -284,28 +285,38 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                 fig.savefig(opath + oname + "grid", dpi=200, bbox_inches='tight')
 
 ss = [100, 200, 400, 600, 800, 1000, 1200]
-type = "1000_zero"
+type = "1000_lagged"
 if type == "1000_zero": # rho = 0.1
     thresh = {100: 0.455, 200: 0.837, 400: 0.324, 600: 0.373, 800: 0.331, 1000: 0.599, 1200: 0.109}
+    times = {100: (1000, 2000), 200: (1000, 2000), 400: (1000, 2000), 600: (1000, 2000), 800: (1000, 2000),
+             1000: (1000, 2000), 1200: (1000, 2000)}
 elif type == "1000_lagged":  # rho = 0.1
     thresh = {100: 0.505, 200: 0.787, 400: 0.267, 600: 0.293, 800: 0.274, 1000: 0.458, 1200: 0.155}
+    times = {100: (1000, 2000), 200: (1000, 2000), 400: (1000, 2000), 600: (1000, 2000), 800: (1000, 2000),
+             1000: (1000, 2000), 1200: (1000, 2000)}
 elif type == "window_zero":  # rho = 0.05
     thresh = {100: 0.695, 200: 0.751, 400: 0.601, 600: 0.526, 800: 0.542, 1000: 0.597, 1200: 0.508}
+    times = {100: (1700, 2000), 200: (1700, 2000), 400: (1200, 1500), 600: (1600, 1900), 800: (1150, 1450),
+             1000: (1450, 1750), 1200: (1700, 2000)}
 elif type == "window_lagged":
-    thresh = {}
+    thresh = {600: 0.712}  # rho = 0.05
+    times = {600: (1600, 1900)}
 elif type == "vort":
     thresh = {100: 0, 200: 0, 400: 0, 600: 0, 800: 0, 1000: 0, 1200: 0}
-
-measures = ["strength", "closeness", "betweenness", "distance"]
+    times = {100: (1965, 2000), 200: (1965, 2000), 400: (1325, 1360), 600: (1855, 1890), 800: (1185, 1220),
+             1000: (1515, 1550), 1200: (1965, 2000)}
+    times = {600: (1600, 1900)}
 
 for s in ss:
-    # f"/Volumes/Maria/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/VM_1600_1900.h5"
-    # f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w1000_s0_l7to0_1000_2000.h5"
-    main(f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_s1_l0to0_1000_2000.h5",
-         f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/", "closeness", thresh[s],
-         extra_plots=False, ptype="individual", prow=5, lmin=-5e6, lmax=5e6)
+    #file = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/VM_{times[s][0]}_{times[s][1]}.h5"
+    #ofile = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/VM_{times[s][0]}_{times[s][1]}_img"
+    file = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w1000_s0_l0to7_{times[s][0]}_{times[s][1]}.h5"
+    ofile = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w1000_s0_l0to7_{times[s][0]}_{times[s][1]}.h5"
+    #file = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_s1_l0to0_{times[s][0]}_{times[s][1]}.h5"
+    #ofile = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_s1_l0to0_{times[s][0]}_{times[s][1]}.h5"
+    main(file, ofile, "closeness", thresh[s],
+         extra_plots=False, ptype="individual", prow=5, lmin=-0.45, lmax=0.45)
 
-    # 1e-1
     #main(f"../../../dataloc/netcdf/netdata/VM.h5",
     #     f"../../../dataloc/netcdf/netdata/", "strength", 0,
-    #     extra_plots=True, ptype="grid", prow=5, lmin=-3e11, lmax=3e11)
+    #     extra_plots=True, ptype="lgrid", prow=5, lmin=-3e11, lmax=3e11)

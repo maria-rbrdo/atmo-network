@@ -77,14 +77,14 @@ def PCC(data, max_lag, min_lag=0):
         raise ValueError('lag must be an integer greater than zero.')
 
 #%%
-sat = [100, 200, 400, 600, 800, 1000, 1200]
+sat = [600]
 times = {100: (1700, 2000), 200: (1700, 2000), 400: (1200, 1500), 600: (1600, 1900), 800: (1150, 1450), 1000: (1450, 1750), 1200: (1700, 2000)}
 colors = ["tomato", "orange", "mediumseagreen", "darkturquoise", "cornflowerblue", "mediumslateblue", "orchid"]
 lmax = 7
 window_size = 25
 window_step = 10
 nsurr = 5
-dsize = 3
+dsize = 2
 
 plot_data = []
 a = []

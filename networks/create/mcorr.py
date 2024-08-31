@@ -8,24 +8,11 @@ adjacency matrix between all grid points for each segment.
 Correlations can be found at zero lag (lag = False) or at time lag (lag = True). Data is saved to a HDF5 file in the
 output directory specified.
 ------------------------------------------------------------------------------------------------------------------------
-Usage:
-    dep_matrix.py <files> <lmax> [--lmin=<lmin>] [--segments=<segments>] [--dsize=<dsize>]
-
-Options:
-    --lmin=<lmin>     Minimum lag [default: 0]
-    --segments=<seg>  Segments in which to break time series [default: 1]
-    --dsize=<dsize>   Down-sampling factor [default: 4]
-------------------------------------------------------------------------------------------------------------------------
-Notes:
-- Available fields: ('h', 'd', 'q', 'z')
-------------------------------------------------------------------------------------------------------------------------
 """
 import os
 import h5py
 import numpy as np
-import pandas as pd
 import skimage as ski
-from docopt import docopt
 from alive_progress import alive_bar
 
 #%%
@@ -203,14 +190,9 @@ def main(fpath, lmax, lmin=0, window_size=1, window_step=1, dsize=2):
                 store.create_dataset(key+"_lags", data=mlag)
 
 #%%
-#if __name__ == "__main__":
-#    args = docopt(__doc__)
-#    main(fpath=args['<files>'], lmax=int(args['<lmax>']), lmin=int(args['--lmin']), segments=int(args['--segments']),
-#         dsize=args['--dsize'])
-
-ss = [200]
+ss = [600]
 times = {100: (1700, 2000), 200: (1000, 1300), 400: (1200, 1500), 600: (1600, 1900), 800: (1150, 1450), 1000: (1450, 1750), 1200: (1700, 2000)}
 for i, s in enumerate(ss):
     print(f"* {s}:")
-    main(f"/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/q_{times[s][0]}_{times[s][1]}", lmax=0,
-         window_size=25, window_step=10, dsize=2)
+    main(f"/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/q_{1000}_{2000}", lmax=0,
+         window_size=1000, window_step=00, dsize=2)

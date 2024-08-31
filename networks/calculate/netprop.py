@@ -52,8 +52,10 @@ def calc_distance(am, nlat, nlon, lat, lon):
     sum0[sum0 == 0] = np.inf
     sum1[sum1 == 0] = np.inf
 
-    out_dist = np.sum(am * dist_matrix, 0) / np.sum(am, 0) * np.sin(np.deg2rad(lat)).reshape(-1)
-    in_dist = np.sum(am * dist_matrix, 1) / np.sum(am, 1) * np.sin(np.deg2rad(lat)).reshape(-1)
+    sum2, sum3 = np.mean(dist_matrix, 0), np.mean(dist_matrix, 1)
+
+    out_dist = np.sum(am * dist_matrix, 0) / (sum0 * sum2) #* np.sin(np.deg2rad(lat)).reshape(-1)
+    in_dist = np.sum(am * dist_matrix, 1) / (sum1 * sum3) #* np.sin(np.deg2rad(lat)).reshape(-1)
 
     out_dist_matrix = out_dist.reshape(nlat, nlon)
     in_dist_matrix = in_dist.reshape(nlat, nlon)
@@ -84,12 +86,18 @@ def calc_strength(am, nlat, nlon, min_dist=0, max_dist=np.inf, latcorrected=Fals
     return in_centrality_matrix, out_centrality_matrix
 
 # ------------------------------------------------------------------------------------------------------------------
-# Global clustering:
+# Clustering:
 # ------------------------------------------------------------------------------------------------------------------
 def calc_clustering(am):
     g = gt.Graph(scipy.sparse.lil_matrix(am))
     clust = gt.global_clustering(g, sampled=True)
     return clust
+
+def calc_localclustering(am, nlat, nlon):
+    g = gt.Graph(scipy.sparse.lil_matrix(am))
+    clust = gt.local_clustering(g, undirected=False)
+    clust_matrix = clust.get_array().reshape(nlat, nlon)
+    return clust_matrix
 
 # ------------------------------------------------------------------------------------------------------------------
 # Closeness:

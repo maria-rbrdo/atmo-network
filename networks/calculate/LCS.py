@@ -1,8 +1,17 @@
+"""
+========================================================================================================================
+LCS Detection Script
+========================================================================================================================
+This script performs three splits from the Lagrangian adjacency matrices and plots them.
+------------------------------------------------------------------------------------------------------------------------
+"""
+
 import os
 import h5py
 import numpy as np
 import scipy as sp
 
+import matplotlib
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 
@@ -22,12 +31,9 @@ def find_split(A, n):
     X = np.flip(X, axis=1)  # decreasing order
 
     # split
-    #s = np.sign(x - np.mean(x, axis=0)).astype(int)
-    #s[s == 0] = 1 if np.random.rand() < 0.5 else -1
-    #s[s == -1] = 0
     S = np.zeros_like(X)
     for i, x in enumerate(X.T):
-        clustering = AgglomerativeClustering(linkage="average").fit(x.reshape(-1, 1))
+        clustering = AgglomerativeClustering(linkage="complete").fit(x.reshape(-1, 1))
         S[:, i] = clustering.labels_
 
     # from binary to int
@@ -35,16 +41,16 @@ def find_split(A, n):
 
     return s
 
-def create_subplot(fig, position, title, projection=ccrs.Orthographic(0, 60), sph=True):
+def create_subplot(fig, position, title, projection=ccrs.Orthographic(0, 90), sph=True):
     ax = fig.add_subplot(position[0], position[1], position[2], projection=projection)
     if sph:
         ax.set_global()
-        ax.gridlines(color="k", linestyle=':', linewidth=2.5)
+        # ax.gridlines(color="k", linestyle=':', linewidth=2.5)
     ax.set_title(title)
     return ax
 
 sph = True
-fpath = "/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat200.T170_highres/netdata/DM_1140_1160.h5"
+fpath = "/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat1200.T170_highres/netdata/TM_400_425.h5"
 #fpath = "/Volumes/Data/dataloc/quadgyre/netdata/TM.h5"
 with h5py.File(fpath, mode='r') as f:
 
@@ -107,7 +113,7 @@ with h5py.File(fpath, mode='r') as f:
     ax_fig_110 = create_subplot(fig_110, (1, 1, 1), None, projection=prjct, sph=sph)
     ax_fig_111 = create_subplot(fig_111, (1, 1, 1), None, projection=prjct, sph=sph)
 
-    color_dict = {"000": "brown", "001": "red", "010": "darkorange", "011": "gold",
+    color_dict = {"000": "brown", "001": "red", "010": "darkorange", "011": "yellowgreen",
                   "100": "lightseagreen", "101": "royalblue", "110": "blueviolet", "111": "navy"}
 
     with alive_bar(coord.shape[0], force_tty=True) as bar:
@@ -154,9 +160,8 @@ with h5py.File(fpath, mode='r') as f:
 
             for ax in ax_list:
                 if sph:
-                    #ax.scatter(coord[n, 1, -1], coord[n, 0, 0], c=color, marker="*", s=10, transform=ccrs.Geodetic())
-                    ax.scatter(coord[n, 1, 0], coord[n, 0, 0], c=color, marker="o", s=50, transform=ccrs.Geodetic())
-                    ax.plot(coord[n, 1, :], coord[n, 0, :], "-", color=color, alpha=0.25, transform=ccrs.Geodetic(), linewidth=5)
+                    ax.scatter(coord[n, 1, 0], coord[n, 0, 0], c=color, marker="o", s=200, transform=ccrs.Geodetic())
+                    ax.plot(coord[n, 1, :], coord[n, 0, :], "-", color=color, alpha=0.25, transform=ccrs.Geodetic(), linewidth=10)
                 else:
                     ax.scatter(coord[n, 1, -1], coord[n, 0, 0], c=color, marker="*", s=1)
                     ax.scatter(coord[n, 1, 0], coord[n, 0, 0], c=color, marker="o", s=1)

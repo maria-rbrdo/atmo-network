@@ -31,10 +31,10 @@ for i in range(5):
     ax.set_global()
     filled_c = ax.contourf(x, y, HB[:, :, i], transform=ccrs.PlateCarree(), cmap = "icefire", vmin = -A0, vmax= A0)
     ax.contour(x, y, HB[:, :, i], colors='black', transform=ccrs.PlateCarree(), linewidths=1.5)
-    ax.set_title(f'{t[i]:.1f} days')
+    ax.set_title(f'{t[i]:.1f} d')
 
 cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
-cbar = fig.colorbar(filled_c, cax=cbar_ax, orientation='vertical')
+cbar = fig.colorbar(filled_c, cax=cbar_ax, orientation='vertical', extend="both")
 cbar.set_label(r"$h_b$ (m)")
 fig.savefig("forcing", dpi=300, bbox_inches='tight')
 plt.close()

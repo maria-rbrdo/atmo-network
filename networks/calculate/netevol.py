@@ -123,20 +123,9 @@ def main(fname, opath, measure, tau=0):
         store.create_dataset(measure, data=vals)
         store.create_dataset(measure+"_t", data=time)
 
-#if __name__ == "__main__":
-
-#    args = docopt(__doc__)
-
-#    main(model=args['<model>'], task=args['<task>'], method=args['<method>'], measure=args['<measure>'],
-#         lag=args['--lag'], tau=float(args['--tau']), degree_distribution=bool(args['--degree_distribution'] == "True"),
-#         filename=args['<files>'], output=args['--output'])
-
-
-
 type = "vort"  # CHECK
-measures = ["in_distance", "out_distance"]
-ss = [100, 200, 400, 600, 800, 1000, 1200]
-
+measures = ["in_distance"]
+ss = [1000]
 if type == "1000_zero":  # rho = 0.1
     thresh = {100: 0.455, 200: 0.837, 400: 0.324, 600: 0.373, 800: 0.331, 1000: 0.599, 1200: 0.109}
     times = {100: (1000, 2000), 200: (1000, 2000), 400: (1000, 2000), 600: (1000, 2000), 800: (1000, 2000),
@@ -150,19 +139,18 @@ elif type == "window_zero":  # rho = 0.05
     times = {100: (1700, 2000), 200: (1700, 2000), 400: (1200, 1500), 600: (1600, 1900), 800: (1150, 1450),
              1000: (1450, 1750), 1200: (1700, 2000)}
 elif type == "window_lagged":
-    thresh = {}
-    times = {100: (1700, 2000), 200: (1700, 2000), 400: (1200, 1500), 600: (1600, 1900), 800: (1150, 1450),
-             1000: (1450, 1750), 1200: (1700, 2000)}
+    thresh = {600: 0.712}  # rho = 0.05
+    times = {600: (1600, 1900)}
 elif type == "vort":
     thresh = {100: 0, 200: 0, 400: 0, 600: 0, 800: 0, 1000: 0, 1200: 0}
     times = {100: (1965, 2000), 200: (1965, 2000), 400: (1325, 1360), 600: (1855, 1890), 800: (1185, 1220),
-             1000: (1515, 1550), 1200: (1965, 2000)}
+             1000: (1505, 1540), 1200: (1965, 2000)}
 
 for s in ss:
     print(f"* {s}:")
     for m in measures:
         print(f"** {m}:")
-        #main(f"/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/CM_q_w25_s10_l0to7_{times[s][0]}_{times[s][1]}.h5",
-        #     f"/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/", m, tau=thresh[s])
+        #main(f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w25_s10_l0to7_{times[s][0]}_{times[s][1]}.h5",
+        #     f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/", m, tau=thresh[s])
         main(f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/VM_{times[s][0]}_{times[s][1]}.h5",
              f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/", m, tau=thresh[s])

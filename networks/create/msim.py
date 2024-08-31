@@ -1,3 +1,16 @@
+"""
+========================================================================================================================
+Kinetic-Similarity Dissimilarity Adjacency Matrix Building Script
+========================================================================================================================
+This script reads the HDF5 velocity output files from the model, sets a number of random initial conditions, uses an
+explicit Euler scheme to find the trajectories particles starting at such points follow, and builds a dissimilarity
+adjacency matrix based on variation. Data is saved to a HDF5 file in the output directory specified.
+------------------------------------------------------------------------------------------------------------------------
+Notes:
+- This code works for both a planar (sph = False) and spherical (sph = True) domain.
+------------------------------------------------------------------------------------------------------------------------
+"""
+
 import os
 import h5py
 import numpy as np
@@ -171,7 +184,7 @@ def madj(coord, sph=True):
                 avdist = np.mean(dist)
                 # calculate adjacency matrix entry
                 if avdist != 0:
-                    adj[i, j] = (1/avdist) * np.sum((avdist - dist) ** 2) ** (1/2)
+                    adj[i, j] = 1/(avdist) * np.mean((avdist - dist) ** 2) ** (1/2)
                 else:
                     adj[i, j] = 0
                 # adjacency matrix symmetry
@@ -235,13 +248,6 @@ def main(upath, vpath, npart, sph, ylim=[0,90], xlim=[0,360]):
         store.create_dataset("adj", data=mtrack)
 
 
-main("/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat200.T170_highres/netdata/u_1140_1160",
-     "/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat200.T170_highres/netdata/v_1140_1160",
-     2000, ylim=[15, 90], xlim=[0, 360], sph=True)
-
-#main("/Volumes/Maria/dataloc/quadgyre/netdata/u_e0_s500_t15",
-#     "/Volumes/Maria/dataloc/quadgyre/netdata/v_e0_s500_t15",
-#     1000, ylim=[-1, 1], xlim=[0, 2], sph=False)
-
-
-
+main("/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat1200.T170_highres/netdata/u_475_490",
+     "/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat1200.T170_highres/netdata/v_475_490",
+     2500, ylim=[15, 90], xlim=[0, 360], sph=True)

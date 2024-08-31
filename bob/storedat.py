@@ -15,16 +15,16 @@ from alive_progress import alive_bar
 
 # Parameters for file and field selection ..............................................................................
 
-fld = 'v'           # Field to visualize
-it_start = 1215     # First iteration
-it_end = 1235       # Last iteration
-dt = 0.2            # Timestep
+fld = 'u'           # Field to visualize
+it_start = 475     # First iteration
+it_end = 490       # Last iteration
+dt = 0.2              # Timestep
 res = 'T170'        # Resolution ('T2730', 'T1365', 'T682', 'T341', 'T170', 'T85', 'T42')
 cstr = '0'          # Frequency parameter for job identification
-tsat = '600'        # Amplitude parameter for job identification
-new = True         # Old or new file
+tsat = '1200'       # Amplitude parameter for job identification
+new = True          # Old or new file
 tag = "_highres"
-nh = True           # Only northern hemisphere?
+nh = False           # Only northern hemisphere?
 
 job = 'pv50-nu4-urlx' + '.c' + cstr + 'sat' + tsat + '.' + res    # Job name
 

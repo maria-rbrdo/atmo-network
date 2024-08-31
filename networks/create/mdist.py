@@ -1,8 +1,19 @@
+"""
+========================================================================================================================
+Dynamical-Proximity Dissimilarity Adjacency Matrix Building Script
+========================================================================================================================
+This script reads the HDF5 velocity output files from the model, sets a number of random initial conditions, uses an
+explicit Euler scheme to find the trajectories particles starting at such points follow, and builds a dissimilarity
+adjacency matrix based on their geodesic distances. Data is saved to a HDF5 file in the output directory specified.
+------------------------------------------------------------------------------------------------------------------------
+Notes:
+- This code works for both a planar (sph = False) and spherical (sph = True) domain.
+------------------------------------------------------------------------------------------------------------------------
+"""
+
 import os
 import h5py
-import matplotlib.pyplot as plt
 import numpy as np
-import cartopy.crs as ccrs
 from alive_progress import alive_bar
 
 def iposition(ylim, xlim, npart):
@@ -241,13 +252,6 @@ def main(upath, vpath, npart, sph, ylim=[0,90], xlim=[0,360]):
         store.create_dataset("adj", data=mtrack)
 
 
-main("/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat600.T170_highres/netdata/u_1215_1235",
-     "/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat600.T170_highres/netdata/v_1215_1235",
-     2250, ylim=[15, 90], xlim=[0, 360], sph=True)
-
-#main("../../../dataloc/quadgyre/netdata/u_e0_s500_t15",
-#     "../../../dataloc/quadgyre/netdata/v_e0_s500_t15",
-#     1000, ylim=[-1, 1], xlim=[0, 2], sph=False)
-
-
-
+main("/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat1200.T170_highres/netdata/u_475_490",
+     "/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat1200.T170_highres/netdata/v_475_490",
+     2500, ylim=[15, 90], xlim=[0, 360], sph=True)

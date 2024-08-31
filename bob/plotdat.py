@@ -5,6 +5,7 @@ BOB Model 2D Data Visualization Script
 This script reads the 2D output files from the model and plots them.
 ------------------------------------------------------------------------------------------------------------------------
 """
+
 from getdat import get_data
 
 import os
@@ -17,21 +18,21 @@ from alive_progress import alive_bar
 
 # Parameters for file and field selection ..............................................................................
 
-fld = 'h'               # Field to visualize
-it_start = 1239         # First iteration to plot
-it_end = 1239           # Last iteration to plot
+fld = 'z'               # Field to visualize
+it_start = 1001         # First iteration to plot
+it_end = 1001           # Last iteration to plot
 dt = 1                  # Timestep
 res = 'T170'            # Resolution ('T2730', 'T1365', 'T682', 'T341', 'T170', 'T85', 'T42', 'T21')
 cstr = '0'              # Frequency parameter for job identification
-tsat = '600'            # Amplitude parameter for job identification
-levels = 250            # Levels graph
+tsat = '200'            # Amplitude parameter for job identification
+levels = 50             # Levels graph
 N = 16384
-lmin = 0               # Min level
+lmin = -0               # Min level
 lmax = 5e6              # Max level
-ptype = "grid"          # Plot type: grid or individual plots
+ptype = "grid"    # Plot type: grid or individual plots
 prow = 5                # Plots per row
 mzav = False            # Subtract zonal average?
-new = False             # New or old labeling?
+new = True             # New or old labeling?
 
 job = 'pv50-nu4-urlx' + '.c' + cstr + 'sat' + tsat + '.' + res    # Job name
 host = "localhost"   # localhost or remotehost
@@ -91,13 +92,11 @@ if ptype == "individual":
     plt.rcParams.update({'font.size': 30})
     fig = plt.figure(figsize=(40, 30))
 elif ptype == "grid":
-    #plt.rcParams.update({'font.size': 25})
-    plt.rcParams.update({'font.size': 60})
-    fig = plt.figure(figsize=(30, 50))
-    fig = plt.figure(figsize=(15, 6.4))
+    plt.rcParams.update({'font.size': 25})
+    fig = plt.figure(figsize=(20, 10))
     norm = mpl.colors.Normalize(vmin=lmin, vmax=lmax)
-    #sm = plt.cm.ScalarMappable(cmap=sns.color_palette("Spectral_r", as_cmap=True), norm=norm)
-    sm = plt.cm.ScalarMappable(cmap=sns.cm.rocket, norm=norm)
+    sm = plt.cm.ScalarMappable(cmap=sns.color_palette("Spectral_r", as_cmap=True), norm=norm)
+    # sm = plt.cm.ScalarMappable(cmap=sns.cm.rocket, norm=norm)
 
 # Plot contours
 with alive_bar((it_end-it_start)//dt, force_tty=True) as bar:
@@ -105,6 +104,7 @@ with alive_bar((it_end-it_start)//dt, force_tty=True) as bar:
         # Set projection
         if ptype == "individual":
             ax = fig.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
+            #ax.gridlines(linewidth=7, color="black")
         elif ptype == "grid":
             ax = fig.add_subplot((it_end-it_start)//dt//prow, prow, i+1, projection=ccrs.Orthographic(0, 90))
         ax.set_global()
@@ -138,7 +138,7 @@ with alive_bar((it_end-it_start)//dt, force_tty=True) as bar:
         if ptype == "individual":
             cbar = fig.colorbar(filled_c, orientation='vertical')
             cbar.remove()
-            #fig.suptitle(f"{it:04} days")
+            fig.suptitle(f"{it:04} days")
             fig.savefig(f"{folder}/img{it:05}", dpi=200, bbox_inches='tight')
             fig.clear()
         # Update bar
@@ -148,18 +148,8 @@ if ptype == "grid":
     #cbar_ax = fig.add_axes([0.1, 0.15, 0.9, 0.05])
     #cbar = fig.colorbar(sm, cax=cbar_ax, orientation='horizontal', extend="both")
     cbar_ax = fig.add_axes([0.1, 0.15, 0.05, 0.9])
-    cbar = fig.colorbar(sm, cax=cbar_ax, orientation='vertical', extend="both", format='%.0e')
-    cbar.set_label(r"$\tilde{D}_i$")
+    cbar = fig.colorbar(sm, cax=cbar_ax, orientation='vertical', extend="both", format='%.0e') # format='%.0e'
+    cbar.set_label(r"$\tilde{D}_i$ (m)")
     fig.subplots_adjust(wspace=0.1, hspace=0.1)
     fig.savefig(f"{folder}/{fld}_{it_start}_{it_end}", dpi=200, bbox_inches='tight')
     fig.clear()
-
-# Other ................................................................................................................
-
-# Center data at mid-longitude
-# qxy = np.roll(qxy, nlon // 2, axis=0)
-# xs = xs - xs[nlon // 2]
-# Substract height from mid-longitude from all longitudes
-#   qxy0 = qxy[0, :]
-#   for i in range(nlat):
-#       qxy[:, i] -= qxy0[i]
