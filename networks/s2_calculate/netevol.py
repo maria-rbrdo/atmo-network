@@ -2,7 +2,8 @@
 ========================================================================================================================
 Network Evolution Script
 ========================================================================================================================
-This script calculates graph measures throughout time.
+This script reads the adjacency matrices stored in HDF5 files and calculates network metrics for each of them. Data is
+saved to a HDF5 file in the output directory specified. This then will allow us to plot the evolution of network metrics.
 ------------------------------------------------------------------------------------------------------------------------
 """
 
@@ -11,8 +12,8 @@ import h5py
 import numpy as np
 from alive_progress import alive_bar
 
-from networks.calculate.netprop import *
-from networks.plot.plot import *
+from networks.s2_calculate.netprop import *
+from networks.s3_plot.plot import *
 
 def main(fname, opath, measure, tau=0):
     """

@@ -2,7 +2,7 @@
 ========================================================================================================================
 Threshold Comparison Script
 ========================================================================================================================
-This script builds compares the density / link distance obtained for different thresholds.
+This script reads adjacency matrices stored in HDF5 files and plots the density obtained for different thresholds.
 ------------------------------------------------------------------------------------------------------------------------
 """
 
@@ -15,8 +15,8 @@ import matplotlib.cm as cm
 from alive_progress import alive_bar
 from scipy.interpolate import CubicSpline
 
-from networks.calculate.netprop import *
-from networks.plot.plot import *
+from networks.s2_calculate.netprop import *
+from networks.s3_plot.plot import *
 
 thresh = np.linspace(0, 1, 50)
 ss = [100, 200, 400, 600, 800, 1000, 1200]

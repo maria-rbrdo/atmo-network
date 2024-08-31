@@ -2,7 +2,7 @@
 ========================================================================================================================
 Network Properties Script
 ========================================================================================================================
-The functions on this script build graphs with the adjacency matrix provided and calculate a network measure.
+The functions on this script build graphs with the adjacency matrix provided and calculates a network measure.
 """
 
 import numpy as np

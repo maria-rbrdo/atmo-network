@@ -1,8 +1,14 @@
+"""
+========================================================================================================================
+Plotting Script
+========================================================================================================================
+These functions generate different plots.
+"""
+
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import pandas as pd
-import scipy.stats as stats
 import cartopy.crs as ccrs
 
 import warnings

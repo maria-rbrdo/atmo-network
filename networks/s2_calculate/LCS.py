@@ -2,7 +2,10 @@
 ========================================================================================================================
 LCS Detection Script
 ========================================================================================================================
-This script performs three splits from the Lagrangian adjacency matrices and plots them.
+This script reads the HDF5 data file from the creation of the Lagrangian networks, clusters the graph according to
+simultaneous coherent structure colouring (sCSC), and plots the resulting LCS.
+
+It uses agglomerative clustering with complete linkage.
 ------------------------------------------------------------------------------------------------------------------------
 """
 

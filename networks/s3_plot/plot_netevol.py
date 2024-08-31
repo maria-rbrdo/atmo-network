@@ -2,9 +2,10 @@
 ========================================================================================================================
 Network Evolution Visualisation Script
 ========================================================================================================================
-This script plots graph measures throughout time.
+This script reads the HDF5 data file created in netevol.py and plots graph measures throughout time.
 ------------------------------------------------------------------------------------------------------------------------
 """
+
 import h5py
 import numpy as np
 import matplotlib.cm as cm

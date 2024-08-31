@@ -1,18 +1,8 @@
 """
 ========================================================================================================================
-Network Visualization Script
+Network Evolution Visualisation Script
 ========================================================================================================================
-This script builds a graph with the adjacency matrix provided, finds a network measure, and plots it.
-------------------------------------------------------------------------------------------------------------------------
-Usage:
-    indiv_network.py <files> <measure> [--tau=<tau>] [--degree_distribution=<degree_distribution>]
-
-Options:
-    --tau=<tau>  Correlation threshold [default: 0]
-    --degree_distribution=<degree_distribution>  Plot the cumulative degree distribution [default: False]
-------------------------------------------------------------------------------------------------------------------------
-Notes:
-
+This script reads the HDF5 data file created in netevol.py and plots graph measures throughout time.
 ------------------------------------------------------------------------------------------------------------------------
 """
 
@@ -26,9 +16,9 @@ import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 from alive_progress import alive_bar
 
-import networks.calculate.netprop as netprop
-from networks.calculate.netprop import *
-from networks.plot.plot import *
+import networks.s2_calculate.netprop as netprop
+from networks.s2_calculate.netprop import *
+from networks.s3_plot.plot import *
 
 dpi = 200
 def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", prow=5,
