@@ -1,8 +1,8 @@
-## Introduction
+# Introduction
 
 Welcome to the repository for the Master's thesis **"Network-Based Analysis of the Winter Stratospheric Polar Vortex"** conducted at the Mathematical Institute of the University of Oxford. The thesis focuses on exploring how network-based techniques can help improve our understanding of the dynamics of a winter stratospheric polar vortex model. This repository contains the code necessary to perform the analysis presented in the thesis.
 
-## Repository Structure
+# Repository Structure
 
 The code is organized into the following directories:
 
@@ -16,3 +16,13 @@ The code is organized into the following directories:
     - `msim.py`: Creates similarity-based Lagrangian networks.
   - **s2_calculate**: Contains code to calculate network metrics.
   - **s3_plot**: Contains code to plot the network metrics.
+
+# Media
+
+Potential Vorticity | In Strenght - Out Strength of the Vorticity-Based Network
+:-: | :-:
+<video src='video1.mov' width=180/> | <video src='video2.mp4' width=180/>
+
+Lagrangian Trajectories | Lagrangian Trajectories Clustered According to Proximity
+:-: | :-:
+<video src='video1.mov' width=180/> | <video src='video2.mp4' width=180/>
