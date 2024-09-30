@@ -21,8 +21,8 @@ The code is organized into the following directories:
 
 Potential Vorticity | In Strenght - Out Strength of the Vorticity-Based Network
 :-: | :-:
-<video src=https://github.com/user-attachments/assets/46a82d8b-2c0d-468a-97ae-8cff9da69cf2 controls autoplay muted> <\video> | <video src=https://github.com/user-attachments/assets/fdb0b0fe-99fe-4a34-970d-1bb2548778f1 controls autoplay muted> <\video>
+<video src=https://github.com/user-attachments/assets/4fa87577-a5e3-4b21-9b32-852acee0d75c controls autoplay muted> <\video> | <video src=https://github.com/user-attachments/assets/fdb0b0fe-99fe-4a34-970d-1bb2548778f1 controls autoplay muted> <\video>
 
 Lagrangian Trajectories | Lagrangian Trajectories Clustered According to Proximity
 :-: | :-: 
-<video src=https://github.com/user-attachments/assets/c53720a9-e451-49fe-9d9e-64ccf1cb399e controls autoplay muted> <\video> | <video src=https://github.com/user-attachments/assets/de03ac9e-e756-4c02-9a7d-2ef0bbab90e2 controls autoplay muted> <\video>
+<video src=https://github.com/user-attachments/assets/17d36431-ce27-448a-af05-0f8d5249b8b6 controls autoplay muted> <\video> | <video src=https://github.com/user-attachments/assets/42382279-5254-4979-ab38-09c8c7875432 controls autoplay muted> <\video>
