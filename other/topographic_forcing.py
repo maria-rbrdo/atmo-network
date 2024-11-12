@@ -14,8 +14,7 @@ tau = 100  # days1
 Omega = np.deg2rad(360)  # rad/day
 w0 = -0.000
 A = lambda t: A0 * np.cos(np.pi/2 * (1-t/tau))**2 * (t < tau) + A0 * (t >= tau)
-hb = lambda phi, lamb, t: A(t)*np.sin(2*phi)**2*np.cos(2*lamb + w0*t)
-
+hb = lambda phi, lamb, t: A(t)*np.sin(2*phi)**2*np.cos(2*lamb + w0*t) * (phi >= 0)
 
 HB = hb(Phi, Lamb, T)
 
@@ -27,9 +26,10 @@ x = np.rad2deg(lamb)
 y = np.rad2deg(phi)
 
 for i in range(5):
-    ax = fig.add_subplot(1, 5, i+1, projection=ccrs.Orthographic(0, 90))
+    ax = fig.add_subplot(1, 5, i+1, projection=ccrs.Orthographic(0, 40))
     ax.set_global()
-    filled_c = ax.contourf(x, y, HB[:, :, i], transform=ccrs.PlateCarree(), cmap = "icefire", vmin = -A0, vmax= A0)
+    filled_c = ax.contourf(x, y, HB[:, :, i], transform=ccrs.PlateCarree(), cmap = sns.color_palette("Spectral_r", as_cmap=True), vmin = -A0, vmax= A0)
+    ax.gridlines(linestyle=":", color="white")
     ax.contour(x, y, HB[:, :, i], colors='black', transform=ccrs.PlateCarree(), linewidths=1.5)
     ax.set_title(f'{t[i]:.1f} d')
 

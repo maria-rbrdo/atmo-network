@@ -2,8 +2,9 @@ import cv2
 import os
 from alive_progress import alive_bar
 
-# image_folder = '../../dataloc/pv50-nu4-urlx.c0sat200.T170/imgs'
-image_folder = '../../../imgs'
+#image_folder = '/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat600.T170/CM_q_w25_s10_l0to7_1600_1900_strength_t0.712'
+#image_folder = '/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat400.T170_highres/imgs'
+image_folder = '../../../output/ERA5/img_ssw'
 video_name = 'video.mp4'
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 

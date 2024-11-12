@@ -12,21 +12,22 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 
 s = 600
-thresh = {600: 0.712}
+thresh = {600: 0.526}
+#thresh = {600: 0.712}
 #thresh = {600: 0}
 times = {600: (1600, 1900)}
 splits = {600: [("g", 1600, 1773), ("s", 1773, 1797), ("g", 1797, 1862), ("s", 1861, 1895), ("g", 1895, 1900)]}
-ylim = [-0.03, 0.45]
+ylim = [-0.03, 0.35]
 w = 4
 ms = 10
 
 plt.rcParams.update({'font.size': 40})
-fig = plt.figure(figsize=(20, 6))
+fig = plt.figure(figsize=(40, 10))
 ax = plt.subplot(1, 1, 1)
 
 with h5py.File(f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/"
-               f"CM_q_w25_s10_l0to7_{times[s][0]}_{times[s][1]}_evol/"
-               f"CM_q_w25_s10_l0to7_{times[s][0]}_{times[s][1]}_evol_t{thresh[s]}.h5", mode='r') as fdata:
+               f"CM_q_w25_s10_l0to0_{times[s][0]}_{times[s][1]}_evol/"
+               f"CM_q_w25_s10_l0to0_{times[s][0]}_{times[s][1]}_evol_t{thresh[s]}.h5", mode='r') as fdata:
 
 #with h5py.File(f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/"
 #               f"VM_{times[s][0]}_{times[s][1]}_evol/"
@@ -34,9 +35,9 @@ with h5py.File(f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/"
 
     try:
         sin = fdata["in_strength"][:]
-        tin = fdata["in_strength_t"][:] - 1.75
+        tin = fdata["in_strength_t"][:] - 2
         sout = fdata["out_strength"][:]
-        tout = fdata["out_strength_t"][:] + 1.75
+        tout = fdata["out_strength_t"][:] + 2
     except:
         sdata = fdata["strength"][:]
         t = fdata["strength_t"][:]
@@ -80,10 +81,9 @@ with h5py.File(f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/"
     ax.set_ylim(ylim)
     ax.yaxis.grid(linewidth=2, linestyle=':', color='black')
     ax.set_xlabel(f'time (d)')
-    #ax.set_ylabel(r'strength centrality (m s$^{-1}$)')
+    ax.set_ylabel(r'strength centrality')
     ax.set_xticks(np.arange(times[s][0], times[s][1]-25, 50, dtype=int))
     ax.set_xticklabels(np.arange(0, 275, 50, dtype=int))
 
-fig.suptitle(r"(b)")
 fig.subplots_adjust(left=0.15, right=0.75, top=0.85, bottom=0.075, hspace=0, wspace=0)
 plt.savefig("evol_indiv.png", dpi=300, bbox_inches='tight')

@@ -53,7 +53,7 @@ def create_subplot(fig, position, title, projection=ccrs.Orthographic(0, 90), sp
     return ax
 
 sph = True
-fpath = "/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat1200.T170_highres/netdata/TM_400_425.h5"
+fpath = "/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat600.T170_highres/netdata/DM_1215_1230.h5"
 #fpath = "/Volumes/Data/dataloc/quadgyre/netdata/TM.h5"
 with h5py.File(fpath, mode='r') as f:
 
@@ -163,8 +163,8 @@ with h5py.File(fpath, mode='r') as f:
 
             for ax in ax_list:
                 if sph:
-                    ax.scatter(coord[n, 1, 0], coord[n, 0, 0], c=color, marker="o", s=200, transform=ccrs.Geodetic())
-                    ax.plot(coord[n, 1, :], coord[n, 0, :], "-", color=color, alpha=0.25, transform=ccrs.Geodetic(), linewidth=10)
+                    ax.scatter(coord[n, 1, 0], coord[n, 0, 0], c=color, marker="o", s=1, transform=ccrs.Geodetic())
+                    ax.plot(coord[n, 1, :], coord[n, 0, :], "-", color=color, alpha=0.25, transform=ccrs.Geodetic())
                 else:
                     ax.scatter(coord[n, 1, -1], coord[n, 0, 0], c=color, marker="*", s=1)
                     ax.scatter(coord[n, 1, 0], coord[n, 0, 0], c=color, marker="o", s=1)

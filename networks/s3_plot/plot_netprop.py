@@ -100,7 +100,7 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
             if measure == "strength" or measure == "distance":
                 ax_in = fig_in.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
                 ax_out = fig_out.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
-                ax_diff = fig_diff.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
+                ax_diff = fig_diff.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 50))
                 ax_in.set_global()
                 ax_out.set_global()
                 ax_diff.set_global()
@@ -274,8 +274,8 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                 fig.subplots_adjust(wspace=0.1, hspace=0.1)
                 fig.savefig(opath + oname + "grid", dpi=200, bbox_inches='tight')
 
-ss = [100, 200, 400, 600, 800, 1000, 1200]
-type = "1000_lagged"
+ss = [600]
+type = "vort"
 if type == "1000_zero": # rho = 0.1
     thresh = {100: 0.455, 200: 0.837, 400: 0.324, 600: 0.373, 800: 0.331, 1000: 0.599, 1200: 0.109}
     times = {100: (1000, 2000), 200: (1000, 2000), 400: (1000, 2000), 600: (1000, 2000), 800: (1000, 2000),
@@ -295,17 +295,17 @@ elif type == "vort":
     thresh = {100: 0, 200: 0, 400: 0, 600: 0, 800: 0, 1000: 0, 1200: 0}
     times = {100: (1965, 2000), 200: (1965, 2000), 400: (1325, 1360), 600: (1855, 1890), 800: (1185, 1220),
              1000: (1515, 1550), 1200: (1965, 2000)}
-    times = {600: (1600, 1900)}
+    #times = {600: (1600, 1900)}
 
 for s in ss:
-    #file = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/VM_{times[s][0]}_{times[s][1]}.h5"
-    #ofile = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/VM_{times[s][0]}_{times[s][1]}_img"
-    file = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w1000_s0_l0to7_{times[s][0]}_{times[s][1]}.h5"
-    ofile = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w1000_s0_l0to7_{times[s][0]}_{times[s][1]}.h5"
-    #file = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_s1_l0to0_{times[s][0]}_{times[s][1]}.h5"
-    #ofile = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_s1_l0to0_{times[s][0]}_{times[s][1]}.h5"
-    main(file, ofile, "closeness", thresh[s],
-         extra_plots=False, ptype="individual", prow=5, lmin=-0.45, lmax=0.45)
+    file = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/VM_{times[s][0]}_{times[s][1]}.h5"
+    ofile = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/VM_{times[s][0]}_{times[s][1]}_img"
+    #file = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w1000_s0_l0to7_{times[s][0]}_{times[s][1]}.h5"
+    #ofile = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w1000_s0_l0to7_{times[s][0]}_{times[s][1]}.h5"
+    #file = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w25_s10_l0to7_{times[s][0]}_{times[s][1]}.h5"
+    #ofile = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w25_s10_l0to7_{times[s][0]}_{times[s][1]}.h5"
+    main(file, ofile, "strength", thresh[s],
+         extra_plots=False, ptype="individual", prow=5, lmin=-60, lmax=60)
 
     #main(f"../../../dataloc/netcdf/netdata/VM.h5",
     #     f"../../../dataloc/netcdf/netdata/", "strength", 0,

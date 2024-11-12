@@ -15,21 +15,33 @@ import seaborn as sns
 from scipy.io import netcdf_file
 from alive_progress import alive_bar
 
-# Parameters for file and field selection ..............................................................................
-fpath = "/Volumes/Maria/dataloc/netcdf/netcdf_data.nc"
-host = "localhost"   # localhost or remotehost
-lmax = 13.5
-lmin = 0
-mzav = False
-levels = 50
+import datetime
+from math import ceil
 
-# Host .................................................................................................................
+# Parameters for file and field selection ..............................................................................
+fpath = ("../../../data/ERA5/6-hourly-data/"
+         "ssw.nc")      #File path
+host = "localhost"      # localhost or remotehost
+lmax = 13.5             # Max level
+lmin = 0                # Min level
+mzav = False            # Take out mean?
+levels = 50             # Levels graph
+ptype = "individual"          # Plot type: grid or individual plots
+prow = 5                # Number of plots per line if grid
+
+
+# Output file name .....................................................................................................
+fname = "img_"+fpath.split("/")[-1].split(".")[0]
+
+# Output folder ........................................................................................................
 if host == "localhost":
-    folder = os.path.dirname("/Volumes/Maria/dataloc/netcdf/imgs/")
+    if ptype == "individual":
+        folder = os.path.dirname(f"../../../output/ERA5/{fname}/")
+    elif ptype == "grid":
+        folder = os.path.dirname("../../../output/ERA5/")
 elif host == "remotehost":
     folder = os.path.abspath("/home/reboredoprad/bob/dataloc/netcdf/imgs/")
 
-# Create folder to save files ..........................................................................................
 if not os.path.exists(folder):
     os.mkdir(folder)
 
@@ -46,20 +58,31 @@ pv = np.concatenate([pv, np.atleast_3d(pv[:, :, 0])], axis=2)
 
 # Plotting .............................................................................................................
 tit = pv.shape[0]
-dt = 5
+dt = 1
 
 # Initialise plot
-plt.rcParams.update({'font.size': 50})
-fig = plt.figure(figsize=(40, 13))
+
 norm = mpl.colors.Normalize(vmin=lmin, vmax=lmax)
 sm = plt.cm.ScalarMappable(cmap=sns.color_palette("Spectral_r", as_cmap=True), norm=norm)
 
+# Initialise plot
+plt.rcParams.update({'font.size': 100})
+if ptype == "individual":
+    fig = plt.figure(figsize=(40, 30))
+elif ptype == "grid":
+    fig = plt.figure(figsize=(40, 10*ceil(tit/dt/prow)))
+    norm = mpl.colors.Normalize(vmin=lmin, vmax=lmax)
+    sm = plt.cm.ScalarMappable(cmap=sns.color_palette("Spectral_r", as_cmap=True), norm=norm)
+
 # Plot contours
-with alive_bar(5, force_tty=True) as bar:
-    for it in np.array(range(5)):
+with alive_bar(int(tit//dt), force_tty=True) as bar:
+    for i, it in enumerate(np.arange(0, tit, dt)):
 
         # Set projection
-        ax = fig.add_subplot(1, 5, it+1, projection=ccrs.Orthographic(0, 90))
+        if ptype == "individual":
+            ax = fig.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 50))
+        elif ptype == "grid":
+            ax = fig.add_subplot(int(ceil(tit/dt/prow)), prow, i+1, projection=ccrs.Orthographic(0, 90))
         ax.set_global()
         ax.coastlines(linewidth=2, color="white")
 
@@ -68,27 +91,29 @@ with alive_bar(5, force_tty=True) as bar:
             pv = pv - np.mean(pv, axis=2, keepdims=True)
 
         # Plot
-        filled_c = ax.contourf(lon, lat, pv[(it+1)*dt, :, :], levels, transform=ccrs.PlateCarree(),
+        filled_c = ax.contourf(lon, lat, pv[it, :, :], levels, transform=ccrs.PlateCarree(),
                                cmap=sns.color_palette("Spectral_r", as_cmap=True), vmin=lmin, vmax=lmax)
 
-        print(np.min(pv[(it+1)*dt, :, :]), np.max(pv[(it+1)*dt, :, :]))
+        print(np.min(pv[it, :, :]), np.max(pv[it, :, :]))
+
+        # Save img
+        if ptype == "individual":
+            cbar_ax = fig.add_axes([0.93, 0.15, 0.02, 0.75])
+            cbar = fig.colorbar(sm, cax=cbar_ax, orientation='vertical', extend="both")
+            cbar.set_label(r'PV (0.0001 K m$^2$ kg$^{-1}$ s$^{-1}$)')
+            #cbar.remove()
+            #fig.suptitle(f"{it:04} days")
+            fig.savefig(f"{folder}/img{it:08.3f}.png", dpi=200, bbox_inches='tight')
+            fig.clear()
 
         # Update bar
         bar()
 
-cbar_ax = fig.add_axes([0.93, 0.15, 0.02, 0.75])
-cbar = fig.colorbar(sm, cax=cbar_ax, orientation='vertical', extend="both")
-cbar.set_label(r'PV (0.0001 K m$^2$ kg$^{-1}$ s$^{-1}$)')
-fig.subplots_adjust(wspace=0.1, hspace=0.1)
-fig.savefig(f"{folder}/grid", dpi=200, bbox_inches='tight')
-fig.clear()
-
-# Other ................................................................................................................
-
-# Center data at mid-longitude
-# qxy = np.roll(qxy, nlon // 2, axis=0)
-# xs = xs - xs[nlon // 2]
-# Substract height from mid-longitude from all longitudes
-#   qxy0 = qxy[0, :]
-#   for i in range(nlat):
-#       qxy[:, i] -= qxy0[i]
+# Save img
+if ptype == "grid":
+    cbar_ax = fig.add_axes([0.93, 0.15, 0.02, 0.75])
+    cbar = fig.colorbar(sm, cax=cbar_ax, orientation='vertical', extend="both")
+    cbar.set_label(r'PV (0.0001 K m$^2$ kg$^{-1}$ s$^{-1}$)')
+    fig.subplots_adjust(wspace=0.1, hspace=0.1)
+    fig.savefig(f"{folder}/{fname}", dpi=200, bbox_inches='tight')
+    fig.clear()

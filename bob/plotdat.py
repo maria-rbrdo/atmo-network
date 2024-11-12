@@ -18,23 +18,23 @@ from alive_progress import alive_bar
 
 # Parameters for file and field selection ..............................................................................
 
-fld = 'z'               # Field to visualize
-it_start = 1001         # First iteration to plot
-it_end = 1001           # Last iteration to plot
+fld = 'q'               # Field to visualize
+it_start = 1855         # First iteration to plot
+it_end = 1890           # Last iteration to plot
 dt = 1                  # Timestep
 res = 'T170'            # Resolution ('T2730', 'T1365', 'T682', 'T341', 'T170', 'T85', 'T42', 'T21')
 cstr = '0'              # Frequency parameter for job identification
-tsat = '200'            # Amplitude parameter for job identification
-levels = 50             # Levels graph
-N = 16384
-lmin = -0               # Min level
-lmax = 5e6              # Max level
-ptype = "grid"    # Plot type: grid or individual plots
+tsat = '600'            # Amplitude parameter for job identification
+levels = 100            # Levels graph
+lmin = 0                # Min level
+lmax = 2.3              # Max level
+ptype = "individual"    # Plot type: grid or individual plots
 prow = 5                # Plots per row
 mzav = False            # Subtract zonal average?
 new = True             # New or old labeling?
+flag = "_highres"
 
-job = 'pv50-nu4-urlx' + '.c' + cstr + 'sat' + tsat + '.' + res    # Job name
+job = 'pv50-nu4-urlx' + '.c' + cstr + 'sat' + tsat + '.' + res + flag    # Job name
 host = "localhost"   # localhost or remotehost
 
 # Resolution ...........................................................................................................
@@ -99,11 +99,11 @@ elif ptype == "grid":
     # sm = plt.cm.ScalarMappable(cmap=sns.cm.rocket, norm=norm)
 
 # Plot contours
-with alive_bar((it_end-it_start)//dt, force_tty=True) as bar:
-    for i, it in enumerate(np.arange(it_start, it_end, dt, dtype=int)):
+with alive_bar(int((it_end-it_start)//dt), force_tty=True) as bar:
+    for i, it in enumerate(np.arange(it_start, it_end, dt)):
         # Set projection
         if ptype == "individual":
-            ax = fig.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 90))
+            ax = fig.add_subplot(1, 1, 1, projection=ccrs.Orthographic(0, 50))
             #ax.gridlines(linewidth=7, color="black")
         elif ptype == "grid":
             ax = fig.add_subplot((it_end-it_start)//dt//prow, prow, i+1, projection=ccrs.Orthographic(0, 90))
@@ -138,8 +138,8 @@ with alive_bar((it_end-it_start)//dt, force_tty=True) as bar:
         if ptype == "individual":
             cbar = fig.colorbar(filled_c, orientation='vertical')
             cbar.remove()
-            fig.suptitle(f"{it:04} days")
-            fig.savefig(f"{folder}/img{it:05}", dpi=200, bbox_inches='tight')
+            #fig.suptitle(f"{it:04} days")
+            fig.savefig(f"{folder}/img{it:05.3f}.png", dpi=200, bbox_inches='tight')
             fig.clear()
         # Update bar
         bar()
