@@ -102,7 +102,7 @@ def main(fpath, lmax, lmin=0, window_size=1, window_step=1, dsize=2):
     print('Preparing directory...')
 
     # obtain data from fpath
-    info = os.path.basename(fpath).split("_")
+    info = os.path.basename(fpath).split(".")[0].split("_")
     fld, tstart, tend = info[0], info[1], info[2]
     opath = os.path.dirname(fpath) + f'/CM_{fld}_w{window_size}_s{window_step}_l{lmin}to{lmax}_{info[1]}_{info[2]}.h5'
 
@@ -190,9 +190,10 @@ def main(fpath, lmax, lmin=0, window_size=1, window_step=1, dsize=2):
                 store.create_dataset(key+"_lags", data=mlag)
 
 #%%
-ss = [600]
-times = {100: (1700, 2000), 200: (1000, 1300), 400: (1200, 1500), 600: (1600, 1900), 800: (1150, 1450), 1000: (1450, 1750), 1200: (1700, 2000)}
-for i, s in enumerate(ss):
-    print(f"* {s}:")
-    main(f"/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/q_{1000}_{2000}", lmax=0,
-         window_size=1000, window_step=00, dsize=2)
+#ss = [600]
+#times = {100: (1700, 2000), 200: (1000, 1300), 400: (1200, 1500), 600: (1600, 1900), 800: (1150, 1450), 1000: (1450,
+# 1750), 1200: (1700, 2000)}
+#for i, s in enumerate(ss):
+#    print(f"* {s}:")
+
+main(f"../../../../output/ERA5/netdata/2009SSW/pv_0_90.h5", lmax=0, window_size=25, window_step=10, dsize=1)
