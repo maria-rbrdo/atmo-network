@@ -14,23 +14,22 @@ import netCDF4
 
 # Parameters .......................................................................................
 
-fields = ["pv"]
-years = [2000, 2001, 2002, 2003, 2004, 2005]
+fields = ["latitude", "longitude", "time", "pv", "u", "v", "vo"]
+years = [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010]
 DIN = "../../../data/ERA5/"
 DOUT = "../../../output/ERA5/"
-
-# Create folder to save files ......................................................................
-
-if not os.path.exists(DOUT):
-    os.makedirs(DOUT)
 
 # Create files .....................................................................................
 
 for yyyy in years:
     TT = 0
 
-    # Create output file ...........................................................................
-    FOUT = DOUT + f"Y{yyyy}-decfeb-daily-NH-850K"
+    # Create output folder and file ................................................................
+    DOUTT = DOUT + f"Y{yyyy}-DJFM-daily-NH-850K/data/"
+    FOUT = DOUTT + f"Y{yyyy}-DJFM-daily-NH-850K.h5"
+
+    if not os.path.exists(DOUTT):
+        os.makedirs(DOUTT)
 
     if os.path.exists(FOUT):
         print(f"File '{FOUT}' already exists, do you want to overwrite it? [y/n]")
@@ -38,9 +37,9 @@ for yyyy in years:
         if OVERWRITE == "y":
             pass
         else:
-            sys.exit()
+            continue
 
-    for i, mm in enumerate([12, 1, 2]):
+    for i, mm in enumerate([12, 1, 2, 3]):
         # Get input file ........................................................................
         if mm == 12:
             f = netCDF4.Dataset(
@@ -53,7 +52,8 @@ for yyyy in years:
 
         # Store data .............................................................................
         time = (
-            f.variables["valid_time"][:] / 24 - f.variables["valid_time"][0] / 24
+            f.variables["valid_time"][:] / 24 / 3600
+            - f.variables["valid_time"][0] / 24 / 3600
         )  # days since 1900-01-01
         with h5py.File(FOUT, mode="a") as store:
             for field in fields:
@@ -72,7 +72,7 @@ for yyyy in years:
                         store["time"].resize(
                             (store["time"].shape[0] + time.shape[0]), axis=0
                         )
-                        store["time"][-time.shape[0],] = time + TT
+                        store["time"][-time.shape[0] :,] = time + TT
                 else:
                     data = f.variables[field][:]
                     if i == 0:
@@ -87,6 +87,6 @@ for yyyy in years:
                             (store[field].shape[2] + data.shape[0]), axis=2
                         )
                         store[field][:, :, -data.shape[0] :] = data.transpose(1, 2, 0)
-                f.close()
+            f.close()
         # Increase total time considered ........................................................
         TT += time.shape[0]

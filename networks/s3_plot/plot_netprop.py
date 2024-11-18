@@ -11,7 +11,7 @@ import h5py
 
 import numpy as np
 import matplotlib as mpl
-from docopt import docopt
+import seaborn as sns
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 from alive_progress import alive_bar
@@ -274,39 +274,6 @@ def main(fname, opath, measure, tau=0, extra_plots=False, ptype="individual", pr
                 fig.subplots_adjust(wspace=0.1, hspace=0.1)
                 fig.savefig(opath + oname + "grid", dpi=200, bbox_inches='tight')
 
-ss = [600]
-type = "vort"
-if type == "1000_zero": # rho = 0.1
-    thresh = {100: 0.455, 200: 0.837, 400: 0.324, 600: 0.373, 800: 0.331, 1000: 0.599, 1200: 0.109}
-    times = {100: (1000, 2000), 200: (1000, 2000), 400: (1000, 2000), 600: (1000, 2000), 800: (1000, 2000),
-             1000: (1000, 2000), 1200: (1000, 2000)}
-elif type == "1000_lagged":  # rho = 0.1
-    thresh = {100: 0.505, 200: 0.787, 400: 0.267, 600: 0.293, 800: 0.274, 1000: 0.458, 1200: 0.155}
-    times = {100: (1000, 2000), 200: (1000, 2000), 400: (1000, 2000), 600: (1000, 2000), 800: (1000, 2000),
-             1000: (1000, 2000), 1200: (1000, 2000)}
-elif type == "window_zero":  # rho = 0.05
-    thresh = {100: 0.695, 200: 0.751, 400: 0.601, 600: 0.526, 800: 0.542, 1000: 0.597, 1200: 0.508}
-    times = {100: (1700, 2000), 200: (1700, 2000), 400: (1200, 1500), 600: (1600, 1900), 800: (1150, 1450),
-             1000: (1450, 1750), 1200: (1700, 2000)}
-elif type == "window_lagged":
-    thresh = {600: 0.712}  # rho = 0.05
-    times = {600: (1600, 1900)}
-elif type == "vort":
-    thresh = {100: 0, 200: 0, 400: 0, 600: 0, 800: 0, 1000: 0, 1200: 0}
-    times = {100: (1965, 2000), 200: (1965, 2000), 400: (1325, 1360), 600: (1855, 1890), 800: (1185, 1220),
-             1000: (1515, 1550), 1200: (1965, 2000)}
-    #times = {600: (1600, 1900)}
-
-for s in ss:
-    file = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/VM_{times[s][0]}_{times[s][1]}.h5"
-    ofile = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/VM_{times[s][0]}_{times[s][1]}_img"
-    #file = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w1000_s0_l0to7_{times[s][0]}_{times[s][1]}.h5"
-    #ofile = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w1000_s0_l0to7_{times[s][0]}_{times[s][1]}.h5"
-    #file = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w25_s10_l0to7_{times[s][0]}_{times[s][1]}.h5"
-    #ofile = f"/Volumes/Results/dataloc/pv50-nu4-urlx.c0sat{s}.T170/CM_q_w25_s10_l0to7_{times[s][0]}_{times[s][1]}.h5"
-    main(file, ofile, "strength", thresh[s],
-         extra_plots=False, ptype="individual", prow=5, lmin=-60, lmax=60)
-
-    #main(f"../../../dataloc/netcdf/netdata/VM.h5",
-    #     f"../../../dataloc/netcdf/netdata/", "strength", 0,
-    #     extra_plots=True, ptype="lgrid", prow=5, lmin=-3e11, lmax=3e11)
+main("../../../../output/ERA5/Y2000-DJFM-daily-NH-850K/data/CM-pv-Y2000-DJFM-daily-NH-850K-122x0-0to0.h5",
+     "../../../../output/ERA5/Y2000-DJFM-daily-NH-850K/img/cm/",
+     "strength", 0.1, extra_plots=True, ptype="individual", prow=5, lmin=None, lmax=None)
