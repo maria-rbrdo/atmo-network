@@ -6,15 +6,11 @@ Welcome to the repository for the paper **"On complex network techniques for atm
 
 The code is organized into the following directories:
 
-- **bob**: Reads output data from the model.
-- **netcdf**: Reads observation data.
-- **networks**: Contains the analysis code.
-  - **buildnet**: Contains code to create the networks.
-    - `mcorr.py`: Creates correlation-based Eulerian networks.
-    - `mvort.py`: Creates vorticity-based Eulerian networks.
-    - `mdist.py`: Creates proximity-based Lagrangian networks.
-    - `msim.py`: Creates similarity-based Lagrangian networks.
-  - **usenet**: Contains code to calculate and plot the network metrics.
+- **buildnet**: Contains code to create the networks.
+  - `mcorr.py`: Creates correlation-based Eulerian networks.
+  - `mvort.py`: Creates vorticity-based Eulerian networks.
+  - `mlag.py`: Creates Lagrangian networks.
+- **usenet**: Contains code to calculate and plot the network metrics.
 
 # Media
 
