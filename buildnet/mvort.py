@@ -1,13 +1,15 @@
 """
-========================================================================================================================
+====================================================================================================
 Vorticity-Based Adjacency Matrix Building Script
-========================================================================================================================
-This script reads the HDF5 net-output file from the model and finds the vorticity-based adjacency matrix between all
-grid points at each time. Data is saved to a HDF5 file in the output directory specified.
-------------------------------------------------------------------------------------------------------------------------
+====================================================================================================
+This script reads the HDF5 net-output file from the model and finds the vorticity-based adjacency
+matrix between all grid points at each time. Data is saved to a HDF5 file in the output directory
+specified.
+----------------------------------------------------------------------------------------------------
 Notes:
-- This code is written to for a spherical domain. If the domain is not spherical this network is not well-built.
-------------------------------------------------------------------------------------------------------------------------
+-This code is written to for a spherical domain. If the domain is not spherical this network is not
+well-built.
+----------------------------------------------------------------------------------------------------
 """
 
 import os
@@ -171,8 +173,4 @@ def main(fpath, dsize=4):
 # Run:
 # -------------------------------------------------------------------------------------------------
 
-ss = [1000]
-times = {100: (1965, 2000), 200: (1965, 2000), 400: (1325, 1360), 600: (1855, 1890), 800: (1185, 1220), 1000: (1505, 1540), 1200: (1965, 2000)}
-for s in ss:
-    main(f"/Volumes/Data/dataloc/pv50-nu4-urlx.c0sat{s}.T170/netdata/z_{times[s][0]}_{times[s][1]}", dsize=2)
-    #main(f"/Volumes/Maria/dataloc/netcdf/netdata/data", dsize=4)
+main(f"~/z", dsize=2)

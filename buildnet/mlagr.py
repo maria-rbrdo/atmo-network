@@ -4,10 +4,10 @@ Lagrangian Adjacency Matrix Building Script
 ====================================================================================================
 This script reads the HDF5 net-output file from the model and finds the lagrangian-based adjacency
 matrices. Data is saved to a HDF5 file in the output directory specified.
-------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
 Notes:
 - This code is written to for a spherical domain. If the domain is not spherical this network is not well-built.
-------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
 """
 
 import os
