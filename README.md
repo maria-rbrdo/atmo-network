@@ -10,7 +10,8 @@ The code is organized into the following directories:
   - `mcorr.py`: Creates correlation-based Eulerian networks.
   - `mvort.py`: Creates vorticity-based Eulerian networks.
   - `mlag.py`: Creates Lagrangian networks.
-- **usenet**: Contains code to calculate and plot the network metrics.
+- **usenet**: Contains useful code.
+  - `plotlcs.py`: Clusters trajectories.
 
 # Media
 
