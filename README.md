@@ -11,7 +11,8 @@ The code is organized into the following directories:
   - `mvort.py`: Creates vorticity-based Eulerian networks.
   - `mlag.py`: Creates Lagrangian networks.
 - **usenet**: Contains useful code.
-  - `plotlcs.py`: Clusters trajectories.
+  - `prop.py`: Calculates network measures.
+  - `findlcs.py`: Clusters trajectories.
 
 # Media
 
